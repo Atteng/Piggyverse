@@ -8,6 +8,7 @@ import { Header } from "@/shared/ui/header";
 import { MobileNav } from "@/shared/ui/mobile-nav";
 import { Toaster } from "@/components/ui/toaster";
 import { UserActivityProvider } from "@/components/providers/user-activity-provider";
+import { MobileBlocker } from "@/components/ui/mobile-blocker";
 
 const jetBrainsMono = localFont({
   src: [
@@ -38,6 +39,7 @@ export default function RootLayout({
       <body className={`${geistSans.variable} ${jetBrainsMono.variable} antialiased bg-background text-foreground font-mono`}>
         <Providers>
           <UserActivityProvider>
+            <MobileBlocker />
             {/* Global Background Image Layer */}
             <div className="fixed inset-0 z-[-1]">
               <div className="absolute inset-0 bg-[url('/images/bg-2.jpg')] bg-cover bg-center bg-no-repeat" />

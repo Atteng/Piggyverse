@@ -18,7 +18,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-export function Header() {
+import { Suspense } from "react";
+
+function HeaderContent() {
     const searchParams = useSearchParams();
     const pathname = usePathname();
     const { replace } = useRouter();
@@ -160,5 +162,13 @@ export function Header() {
 
             <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
         </header>
+    );
+}
+
+export function Header() {
+    return (
+        <Suspense fallback={<div className="h-20 w-full" />}>
+            <HeaderContent />
+        </Suspense>
     );
 }

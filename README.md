@@ -1,36 +1,62 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# PiggyVerse
+
+The decentralized gaming hub for PiggyDAO. A platform for tournaments, betting, and community engagement.
+
+## Features
+
+- **Competitive Hub**: Host and join tournaments with customizable rules.
+- **Betting System**: Multi-market betting with parimutuel support.
+- **Game Library**: Curated collection of web3 games.
+- **Watch to Earn**: Earn rewards by watching tournament streams.
+- **Social Integration**: Login with Discord and Twitter.
+
+## Tech Stack
+
+- **Framework**: Next.js 16 (App Router)
+- **Database**: PostgreSQL + Prisma ORM
+- **Styling**: Tailwind CSS 4 + shadcn/ui
+- **Auth**: NextAuth.js
+- **Web3**: Wagmi + Viem
 
 ## Getting Started
 
-First, run the development server:
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/Atteng/Piggyverse.git
+   cd Piggyverse
+   ```
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+3. **Set up environment variables**
+   Copy `.env.example` to `.env` and fill in your values:
+   ```bash
+   cp .env.example .env
+   ```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+4. **Initialize Database**
+   ```bash
+   npx prisma generate
+   npx prisma db push
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+5. **Run the development server**
+   ```bash
+   npm run dev
+   ```
 
-## Learn More
+## Environment Variables
 
-To learn more about Next.js, take a look at the following resources:
+The application requires several environment variables to function correctly. See `.env.example` for the full list. Key variables include:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `DATABASE_URL`: Connection string for PostgreSQL.
+- `NEXTAUTH_SECRET`: Secret key for session encryption.
+- `DISCORD_CLIENT_ID` / `SECRET`: For Discord authentication.
+- `NEXT_PUBLIC_CONTRACT_...`: Smart contract addresses for the PiggyVerse ecosystem.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Contributing
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.

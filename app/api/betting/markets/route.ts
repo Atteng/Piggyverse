@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        const market = await prisma.bettingMarket.findUnique({
+        const markets = await prisma.bettingMarket.findMany({
             where: { tournamentId },
             include: {
                 outcomes: {
@@ -33,42 +33,45 @@ export async function GET(request: NextRequest) {
             }
         });
 
-        if (!market) {
-            return NextResponse.json(
-                { error: 'Betting market not found' },
-                { status: 404 }
-            );
+        if (!markets || markets.length === 0) {
+            return NextResponse.json({ markets: [] });
         }
 
-        // Calculate current odds for each outcome
-        const outcomesWithOdds = market.outcomes.map(outcome => {
-            let odds = 1.0;
+        // Calculate current odds for each outcome in each market
+        const marketsWithOdds = markets.map(market => {
+            const outcomesWithOdds = market.outcomes.map(outcome => {
+                let odds = 1.0;
 
-            if (market.marketType === 'PARIMUTUEL') {
-                // Parimutuel odds: (Total Pool / Outcome Pool)
-                const netPool = (market.totalPool + market.poolPreSeed) * (1 - market.bookmakingFee / 100);
-                odds = outcome.totalBets > 0 ? netPool / outcome.totalBets : 0;
-            } else if (market.marketType === 'WEIGHTED') {
-                // Weighted odds based on weight
-                odds = outcome.weight || 1.0;
-            } else if (market.marketType === 'BINARY') {
-                // Binary: 2.0 for both outcomes (even odds)
-                odds = 2.0;
-            } else if (market.marketType === 'SCORE') {
-                // Score-based: dynamic based on total bets
-                const totalBets = market.outcomes.reduce((sum, o) => sum + o.totalBets, 0);
-                odds = totalBets > 0 ? totalBets / (outcome.totalBets || 1) : 1.0;
-            }
+                if (market.marketType === 'PARIMUTUEL') {
+                    // Parimutuel odds: (Total Pool / Outcome Pool)
+                    const netPool = (market.totalPool + market.poolPreSeed) * (1 - market.bookmakingFee / 100);
+                    odds = outcome.totalBets > 0 ? netPool / outcome.totalBets : 0;
+                } else if (market.marketType === 'WEIGHTED') {
+                    // Weighted odds based on weight
+                    odds = outcome.weight || 1.0;
+                } else if (market.marketType === 'BINARY') {
+                    // Binary: 2.0 for both outcomes (even odds)
+                    odds = 2.0;
+                } else if (market.marketType === 'SCORE') {
+                    // Score-based: dynamic based on total bets
+                    const totalBets = market.outcomes.reduce((sum, o) => sum + o.totalBets, 0);
+                    odds = totalBets > 0 ? totalBets / (outcome.totalBets || 1) : 1.0;
+                }
+
+                return {
+                    ...outcome,
+                    currentOdds: Math.max(odds, 1.0) // Minimum 1.0 odds
+                };
+            });
 
             return {
-                ...outcome,
-                currentOdds: Math.max(odds, 1.0) // Minimum 1.0 odds
+                ...market,
+                outcomes: outcomesWithOdds
             };
         });
 
         return NextResponse.json({
-            ...market,
-            outcomes: outcomesWithOdds
+            markets: marketsWithOdds
         });
     } catch (error) {
         console.error('Error fetching betting market:', error);

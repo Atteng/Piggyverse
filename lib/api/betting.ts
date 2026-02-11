@@ -1,8 +1,9 @@
 // API client for betting operations
-export async function getBettingMarket(tournamentId: string) {
+export async function getBettingMarkets(tournamentId: string) {
     const res = await fetch(`/api/betting/markets?tournamentId=${tournamentId}`);
-    if (!res.ok) throw new Error('Failed to fetch betting market');
-    return res.json();
+    if (!res.ok) throw new Error('Failed to fetch betting markets');
+    const data = await res.json();
+    return data.markets || [];
 }
 
 export async function placeBet(data: {

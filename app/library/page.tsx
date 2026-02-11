@@ -9,7 +9,9 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 
-export default function LibraryPage() {
+import { Suspense } from "react";
+
+function LibraryPageContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
 
@@ -69,7 +71,7 @@ export default function LibraryPage() {
                     {/* Games Grid */}
                     {games.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {games.map((game, index) => (
+                            {games.map((game: any, index: number) => (
                                 <motion.div
                                     key={game.id}
                                     initial={{ opacity: 0, y: 20 }}
@@ -119,5 +121,13 @@ export default function LibraryPage() {
                 </>
             )}
         </div>
+    );
+}
+
+export default function LibraryPage() {
+    return (
+        <Suspense fallback={<div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-white" /></div>}>
+            <LibraryPageContent />
+        </Suspense>
     );
 }

@@ -449,7 +449,7 @@ export function TournamentDetailsView({ tournamentId }: TournamentDetailsViewPro
                                                         <Badge variant="outline" className="text-[var(--color-piggy-deep-pink)] border-[var(--color-piggy-deep-pink)]">
                                                             {market.marketType}
                                                         </Badge>
-                                                        {market.status === "RESOLVED" && (
+                                                        {market.status === "SETTLED" && (
                                                             <Badge className="bg-green-500/20 text-green-400 border border-green-500/50 flex items-center gap-1">
                                                                 <CheckCircle2 className="w-3 h-3" /> Resolved
                                                             </Badge>
@@ -460,7 +460,7 @@ export function TournamentDetailsView({ tournamentId }: TournamentDetailsViewPro
                                                     </h3>
                                                 </div>
 
-                                                {isHost && market.status !== "RESOLVED" && (
+                                                {isHost && market.status !== "SETTLED" && (
                                                     <Button
                                                         onClick={() => handleResolveClick(market)}
                                                         className="bg-purple-600 hover:bg-purple-700 text-white font-bold shadow-[0_0_15px_rgba(147,51,234,0.4)]"
@@ -473,7 +473,7 @@ export function TournamentDetailsView({ tournamentId }: TournamentDetailsViewPro
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                                 {market.outcomes && market.outcomes.length > 0 ? (
                                                     market.outcomes.map((outcome: any) => {
-                                                        const isWinner = market.status === "RESOLVED" && market.winningOutcomeId === outcome.id;
+                                                        const isWinner = market.status === "SETTLED" && market.winningOutcomeId === outcome.id;
                                                         return (
                                                             <div
                                                                 key={outcome.id}

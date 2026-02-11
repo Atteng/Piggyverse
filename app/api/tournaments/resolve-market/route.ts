@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Check if market is already resolved
-        if (market.status === "RESOLVED") {
+        if (market.status === 'SETTLED') {
             return NextResponse.json({ error: "Market is already resolved" }, { status: 400 });
         }
 
@@ -65,8 +65,7 @@ export async function POST(request: NextRequest) {
             const updatedMarket = await tx.bettingMarket.update({
                 where: { id: marketId },
                 data: {
-                    status: "RESOLVED",
-                    resolvedAt: new Date(),
+                    status: 'SETTLED',
                     winningOutcomeId: outcomeId
                 }
             });

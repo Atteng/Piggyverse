@@ -13,7 +13,9 @@ async function getAdminBets() {
     return res.json();
 }
 
-export default function AdminBetsPage() {
+import { Suspense } from "react";
+
+function AdminBetsContent() {
     const { data: bets, isLoading } = useQuery({
         queryKey: ['admin-bets'],
         queryFn: getAdminBets
@@ -96,5 +98,13 @@ export default function AdminBetsPage() {
                 </div>
             )}
         </div>
+    );
+}
+
+export default function AdminBetsPage() {
+    return (
+        <Suspense fallback={<div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-white" /></div>}>
+            <AdminBetsContent />
+        </Suspense>
     );
 }

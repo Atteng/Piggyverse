@@ -44,7 +44,7 @@ export const authOptions: NextAuthOptions = {
                 const rawUsername = profile.username || `user${profile.id}`;
                 return {
                     id: profile.id,
-                    email: profile.email,
+                    email: null,
                     image: `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.png`,
                     username: rawUsername,
                 };

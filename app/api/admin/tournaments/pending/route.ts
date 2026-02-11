@@ -17,8 +17,10 @@ export async function GET(request: NextRequest) {
         const tournaments = await prisma.tournament.findMany({
             where: {
                 status: 'COMPLETED',
-                bettingMarket: {
-                    status: 'OPEN' // Market not yet settled
+                bettingMarkets: {
+                    some: {
+                        status: 'OPEN' // Market not yet settled
+                    }
                 }
             },
             include: {
@@ -32,7 +34,7 @@ export async function GET(request: NextRequest) {
                         username: true
                     }
                 },
-                bettingMarket: {
+                bettingMarkets: {
                     include: {
                         outcomes: true,
                         _count: {
