@@ -1,0 +1,55 @@
+"use client";
+
+import { TournamentForm } from "@/features/tournaments/components/tournament-form";
+import { useSession, signIn } from "next-auth/react";
+import { Button } from "@/components/ui/button";
+import { Loader2, Lock } from "lucide-react";
+
+export default function HostTournamentPage() {
+    const { status } = useSession();
+
+    if (status === "loading") {
+        return (
+            <div className="w-full max-w-7xl mx-auto min-h-[60vh] flex flex-col items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-[var(--color-piggy-deep-pink)] mb-4" />
+                <p className="text-gray-400 font-mono">Checking permissions...</p>
+            </div>
+        );
+    }
+
+    if (status === "unauthenticated") {
+        return (
+            <div className="w-full max-w-7xl mx-auto min-h-[60vh] flex flex-col items-center justify-center text-center space-y-6 px-4">
+                <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mb-4">
+                    <Lock className="w-10 h-10 text-gray-500" />
+                </div>
+                <h1 className="text-3xl font-black text-white font-mono">Authentication Required</h1>
+                <p className="text-gray-400 max-w-md mx-auto text-lg">
+                    You need to be logged in to host a tournament. Please sign in to continue.
+                </p>
+                <Button
+                    onClick={() => signIn()}
+                    className="bg-[var(--color-piggy-deep-pink)] hover:bg-[var(--color-piggy-deep-pink)]/90 text-white font-bold rounded-xl px-8 py-6 text-lg"
+                >
+                    Sign In to Host
+                </Button>
+            </div>
+        );
+    }
+
+    return (
+        <div className="w-full max-w-7xl mx-auto space-y-8 pb-20">
+            {/* Header */}
+            <div className="text-center space-y-4 mb-12">
+                <h1 className="text-5xl font-black text-white font-mono tracking-tighter drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">
+                    Host Tournament
+                </h1>
+                <p className="text-gray-200 max-w-2xl mx-auto text-lg">
+                    Create your own competitive event. Choose your game, set the rules, and decide if you want to play for fun or for real rewards.
+                </p>
+            </div>
+
+            <TournamentForm />
+        </div>
+    );
+}
