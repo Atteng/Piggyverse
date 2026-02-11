@@ -12,6 +12,11 @@
 
 # testing
 /coverage
+/test-results
+/playwright-report
+/blob-report
+playwright/.cache
+junit.xml
 
 # next.js
 /.next/
@@ -29,6 +34,10 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+*.log
+logs/
+temp/
+tmp/
 
 # env files (can opt-in for committing if needed)
 .env*
@@ -39,6 +48,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# caches
+.eslintcache
+.stylelintcache
+.terser-cache
+.cache
+.turbo
 
 /lib/generated/prisma
 
