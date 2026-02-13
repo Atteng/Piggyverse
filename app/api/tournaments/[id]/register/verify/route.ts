@@ -7,16 +7,18 @@ import { base } from 'viem/chains';
 import { BLOCKCHAIN_CONFIG } from '@/lib/blockchain-config';
 
 // Treasury address must match the one in intent
+const getSanitizedEnv = (key: string) => (process.env[key] || '').split('#')[0].replace(/['"]/g, '').trim();
+
 if (!process.env.NEXT_PUBLIC_CONTRACT_PIGGYVERSE) {
     throw new Error("NEXT_PUBLIC_CONTRACT_PIGGYVERSE is not defined in environment variables");
 }
-const TREASURY_WALLET = process.env.NEXT_PUBLIC_CONTRACT_PIGGYVERSE.toLowerCase();
+const TREASURY_WALLET = getSanitizedEnv('NEXT_PUBLIC_CONTRACT_PIGGYVERSE').toLowerCase();
 
 // Token Contract Addresses
 const TOKEN_CONTRACTS: Record<string, string> = {
-    PIGGY: BLOCKCHAIN_CONFIG.CONTRACTS.PIGGY_TOKEN.toLowerCase(),
-    USDC: BLOCKCHAIN_CONFIG.CONTRACTS.USDC_TOKEN.toLowerCase(),
-    UP: BLOCKCHAIN_CONFIG.CONTRACTS.UP_TOKEN.toLowerCase(),
+    PIGGY: getSanitizedEnv('NEXT_PUBLIC_CONTRACT_PIGGY_TOKEN').toLowerCase(),
+    USDC: getSanitizedEnv('NEXT_PUBLIC_CONTRACT_USDC').toLowerCase(),
+    UP: getSanitizedEnv('NEXT_PUBLIC_CONTRACT_UP_TOKEN').toLowerCase(),
 };
 
 // Token Decimals
@@ -85,58 +87,81 @@ export async function POST(
 
         // Verify On-Chain
         try {
-            const tx = await client.getTransaction({ hash: txHash as `0x${string}` });
+            // Use getTransactionReceipt to see the logs (critical for Smart Wallets/Multicall)
+            const receipt = await client.getTransactionReceipt({ hash: txHash as `0x${string}` });
 
-            let actualRecipient = "";
-            let actualAmount = 0;
+            if (receipt.status !== 'success') {
+                return NextResponse.json({ error: 'Transaction failed on blockchain' }, { status: 400 });
+            }
 
-            // 1. Check if it's an ERC20 Transfer
-            if (expectedTokenAddress) {
-                // If token is an ERC20, the tx 'to' must be the contract address
-                if (tx.to?.toLowerCase() !== expectedTokenAddress) {
+            // Define the Transfer event signature for parsing
+            const TRANSFER_EVENT_SIGNATURE = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
+
+            // Filter logs for Transfer events to our Treasury
+            const transfers = receipt.logs.filter(log => {
+                const isTransfer = log.topics[0] === TRANSFER_EVENT_SIGNATURE;
+                if (!isTransfer) return false;
+
+                // ERC20 Transfer log: topics[1] = from, topics[2] = to
+                // We check if the 'to' address matches our treasury
+                const toAddress = log.topics[2] ? `0x${log.topics[2].slice(26)}`.toLowerCase() : "";
+                return toAddress === TREASURY_WALLET;
+            });
+
+            if (transfers.length === 0) {
+                // If native ETH was expected, check receipt.to (this section applies if expectedTokenAddress is null)
+                if (!expectedTokenAddress) {
+                    const tx = await client.getTransaction({ hash: txHash as `0x${string}` });
+                    const actualRecipient = tx.to?.toLowerCase() || "";
+                    const actualAmount = parseFloat(formatEther(tx.value));
+
+                    if (actualRecipient !== TREASURY_WALLET) {
+                        return NextResponse.json({
+                            error: `Recipient mismatch. Expected Treasury (${TREASURY_WALLET}), but transaction sent to ${actualRecipient}`
+                        }, { status: 400 });
+                    }
+
+                    const epsilon = 0.000001;
+                    if (Math.abs(actualAmount - registration.expectedAmount) > epsilon) {
+                        return NextResponse.json({
+                            error: `Amount mismatch. Expected: ${registration.expectedAmount} ETH, Got: ${actualAmount} ETH`
+                        }, { status: 400 });
+                    }
+
+                    // Native SUCCESS logic continues below (shared with ERC20)
+                    var actualAmountFinal = actualAmount;
+                } else {
                     return NextResponse.json({
-                        error: `Transaction sent to wrong contract. Expected ${token} contract (${expectedTokenAddress}), but got ${tx.to}`
+                        error: `No transfer to Treasury found in this transaction. Expected ${token} transfer to ${TREASURY_WALLET}.`
+                    }, { status: 400 });
+                }
+            } else {
+                // ERC20 Transfer Found
+                // Find the transfer that matches the expected token contract
+                const matchingTokenTransfer = transfers.find(log => log.address.toLowerCase() === expectedTokenAddress);
+
+                if (!matchingTokenTransfer) {
+                    const foundTokens = [...new Set(transfers.map(l => l.address.toLowerCase()))];
+                    return NextResponse.json({
+                        error: `Transaction sent to wrong contract. Expected ${token} contract (${expectedTokenAddress}), but logs show transfers for: ${foundTokens.join(', ')}`
                     }, { status: 400 });
                 }
 
-                // Decode transfer data
-                try {
-                    const { args, functionName } = decodeFunctionData({
-                        abi: ERC20_ABI,
-                        data: tx.input,
-                    });
+                // Parse the amount from log.data (for standard Transfer event)
+                const amountHex = matchingTokenTransfer.data;
+                const amountBigInt = BigInt(amountHex);
+                var actualAmountFinal = parseFloat(formatUnits(amountBigInt, decimals));
 
-                    if (functionName !== 'transfer') {
-                        return NextResponse.json({ error: 'Not a transfer transaction' }, { status: 400 });
-                    }
-
-                    const [to, amount] = args as [string, bigint];
-                    actualRecipient = to.toLowerCase();
-                    actualAmount = parseFloat(formatUnits(amount, decimals));
-                } catch (decodeError) {
-                    console.error('Failed to decode tx data:', decodeError);
-                    return NextResponse.json({ error: 'Could not parse ERC20 transfer data. Ensure this is a direct transfer.' }, { status: 400 });
+                // Check Amount with epsilon
+                const epsilon = 0.000001;
+                if (Math.abs(actualAmountFinal - registration.expectedAmount) > epsilon) {
+                    return NextResponse.json({
+                        error: `Amount mismatch. Expected: ${registration.expectedAmount} ${token}, Got: ${actualAmountFinal} ${token}`
+                    }, { status: 400 });
                 }
-            } else {
-                // 2. Native Transfer (ETH/MATIC)
-                actualRecipient = tx.to?.toLowerCase() || "";
-                actualAmount = parseFloat(formatEther(tx.value));
             }
 
-            // Check Recipient
-            if (actualRecipient !== TREASURY_WALLET) {
-                return NextResponse.json({
-                    error: `Recipient mismatch. Expected Treasury (${TREASURY_WALLET}), but transaction sent to ${actualRecipient}`
-                }, { status: 400 });
-            }
-
-            // Check Amount with epsilon
-            const epsilon = 0.000001;
-            if (Math.abs(actualAmount - registration.expectedAmount) > epsilon) {
-                return NextResponse.json({
-                    error: `Amount mismatch. Expected: ${registration.expectedAmount} ${token}, Got: ${actualAmount} ${token}`
-                }, { status: 400 });
-            }
+            const actualAmount = actualAmountFinal;
 
             // Check if tournament has invite codes and assign one
             const availableCode = await prisma.tournamentInviteCode.findFirst({

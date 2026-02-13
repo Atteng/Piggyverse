@@ -5,10 +5,12 @@ import { prisma } from '@/lib/prisma';
 
 // Hardcoded Treasury Wallet (User's Wallet / Admin)
 // In production, this should be in ENV
+const getSanitizedEnv = (key: string) => (process.env[key] || '').split('#')[0].replace(/['"]/g, '').trim();
+
 if (!process.env.NEXT_PUBLIC_CONTRACT_PIGGYVERSE) {
     throw new Error("NEXT_PUBLIC_CONTRACT_PIGGYVERSE is not defined in environment variables");
 }
-const TREASURY_WALLET = process.env.NEXT_PUBLIC_CONTRACT_PIGGYVERSE;
+const TREASURY_WALLET = getSanitizedEnv('NEXT_PUBLIC_CONTRACT_PIGGYVERSE');
 
 export async function POST(
     request: NextRequest,
