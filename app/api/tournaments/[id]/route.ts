@@ -10,6 +10,8 @@ export async function GET(
 ) {
     const params = await props.params;
     try {
+        const session = await getServerSession(authOptions);
+
         const tournament = await prisma.tournament.findUnique({
             where: { id: params.id },
             include: {
@@ -36,6 +38,12 @@ export async function GET(
                         }
                     }
                 },
+                ...(session?.user?.id ? {
+                    inviteCodes: {
+                        where: { usedByUserId: session.user.id },
+                        select: { code: true }
+                    }
+                } : {}),
                 registrations: {
                     include: {
                         user: {
@@ -63,6 +71,36 @@ export async function GET(
                 { status: 404 }
             );
         }
+
+        // --- SELF-HEALING: Assign Invite Code if missing for registered user ---
+        if (session?.user?.id && (!(tournament as any).inviteCodes || (tournament as any).inviteCodes.length === 0)) {
+            const userReg = (tournament as any).registrations.find((r: any) => r.user.id === session.user.id);
+            const isPaid = !tournament.entryFeeAmount || tournament.entryFeeAmount === 0 || userReg?.paymentStatus === 'COMPLETED';
+
+            if (userReg && isPaid) {
+                // Check if there are any available codes
+                const availableCode = await (prisma as any).tournamentInviteCode.findFirst({
+                    where: {
+                        tournamentId: params.id,
+                        isUsed: false
+                    }
+                });
+
+                if (availableCode) {
+                    await (prisma as any).tournamentInviteCode.update({
+                        where: { id: availableCode.id },
+                        data: {
+                            isUsed: true,
+                            usedByUserId: session.user.id
+                        }
+                    });
+
+                    // Manually populate in response object to avoid second fetch
+                    (tournament as any).inviteCodes = [{ code: availableCode.code }];
+                }
+            }
+        }
+        // -----------------------------------------------------------------------
 
         return NextResponse.json(tournament);
     } catch (error) {

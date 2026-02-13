@@ -113,6 +113,7 @@ export async function POST(request: NextRequest) {
             streamLink,
             allowBetting,
             bettingMarkets,
+            inviteCodes,
         } = body;
 
         if (!name || !gameId || !maxPlayers || !startDate || !startTime) {
@@ -146,6 +147,9 @@ export async function POST(request: NextRequest) {
                 isStreamed: isStreamed || false,
                 streamLink,
                 allowBetting: allowBetting || false,
+                inviteCodes: inviteCodes && inviteCodes.length > 0 ? {
+                    create: inviteCodes.map((code: string) => ({ code }))
+                } : undefined,
             },
             include: {
                 game: {

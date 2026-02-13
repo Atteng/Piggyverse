@@ -65,6 +65,25 @@ export async function POST(
             );
         }
 
+        // Check if tournament has invite codes and assign one
+        const availableCode = await prisma.tournamentInviteCode.findFirst({
+            where: {
+                tournamentId: params.id,
+                isUsed: false
+            }
+        });
+
+        const hasInviteCodes = await prisma.tournamentInviteCode.count({
+            where: { tournamentId: params.id }
+        }) > 0;
+
+        if (hasInviteCodes && !availableCode) {
+            return NextResponse.json(
+                { error: 'Tournament is full (No lobby codes available)' },
+                { status: 400 }
+            );
+        }
+
         // Create registration
         const registration = await prisma.tournamentRegistration.create({
             data: {
@@ -86,6 +105,17 @@ export async function POST(
                 }
             }
         });
+
+        // Assign code if available
+        if (availableCode) {
+            await prisma.tournamentInviteCode.update({
+                where: { id: availableCode.id },
+                data: {
+                    isUsed: true,
+                    usedByUserId: session.user.id
+                }
+            });
+        }
 
         // Update tournament registered count
         await prisma.tournament.update({

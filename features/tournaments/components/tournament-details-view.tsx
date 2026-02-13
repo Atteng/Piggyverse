@@ -34,6 +34,7 @@ import { BetPlacementModal } from "@/features/betting/components/bet-placement-m
 import { useToast } from "@/hooks/use-toast";
 import { PaymentDepositModal } from "@/features/tournaments/components/payment-deposit-modal";
 import { MarketResolutionModal } from "./market-resolution-modal";
+import { TournamentEditModal } from "./tournament-edit-modal";
 
 interface TournamentDetailsViewProps {
     tournamentId: string;
@@ -100,6 +101,14 @@ export function TournamentDetailsView({ tournamentId }: TournamentDetailsViewPro
             toast({ title: "Delete Failed", description: error.message, variant: "destructive" });
         }
     });
+
+
+    // Edit Modal State
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+    const handleEditClick = () => {
+        setIsEditModalOpen(true);
+    };
 
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
@@ -215,7 +224,10 @@ export function TournamentDetailsView({ tournamentId }: TournamentDetailsViewPro
                                         </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end" className="w-48 bg-[#1a1a1a] border-white/10 text-white">
-                                        <DropdownMenuItem disabled className="cursor-not-allowed text-gray-500">
+                                        <DropdownMenuItem
+                                            className="cursor-pointer hover:bg-white/10"
+                                            onClick={handleEditClick}
+                                        >
                                             <Edit className="w-4 h-4 mr-2" /> Edit Details
                                         </DropdownMenuItem>
                                         <DropdownMenuItem
@@ -239,6 +251,60 @@ export function TournamentDetailsView({ tournamentId }: TournamentDetailsViewPro
                             <p className="text-gray-300 text-lg max-w-2xl font-medium">
                                 {tournament.description}
                             </p>
+
+                            {/* Lobby Code Display */}
+                            {isRegistered && (
+                                <div className="bg-black/40 backdrop-blur-md border border-white/10 rounded-2xl p-6 mt-6 max-w-xl animate-in fade-in slide-in-from-top-4 duration-500">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-8 h-8 rounded-full bg-[var(--color-piggy-deep-pink)]/20 flex items-center justify-center">
+                                                <Shield className="w-4 h-4 text-[var(--color-piggy-deep-pink)]" />
+                                            </div>
+                                            <h3 className="text-white font-black uppercase tracking-tighter">
+                                                Tournament Access
+                                            </h3>
+                                        </div>
+                                        {tournament.inviteCodes?.[0]?.code ? (
+                                            <Badge className="bg-[var(--color-piggy-super-green)] text-black font-bold uppercase tracking-tight">Code Assigned</Badge>
+                                        ) : (
+                                            <Badge variant="outline" className="text-yellow-500 border-yellow-500/50 uppercase tracking-tight">Code Pending</Badge>
+                                        )}
+                                    </div>
+
+                                    {tournament.inviteCodes?.[0]?.code ? (
+                                        <div className="space-y-3">
+                                            <p className="text-sm text-gray-400 font-medium">
+                                                Use this code to join the game lobby or private Discord channel.
+                                            </p>
+                                            <div className="bg-black/60 rounded-xl p-4 flex items-center justify-between border border-white/5 group hover:border-[var(--color-piggy-deep-pink)]/30 transition-colors">
+                                                <code className="text-3xl font-black text-white font-mono tracking-[0.2em]">
+                                                    {tournament.inviteCodes[0].code}
+                                                </code>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="text-gray-400 hover:text-white hover:bg-white/5"
+                                                    onClick={() => {
+                                                        navigator.clipboard.writeText(tournament.inviteCodes[0].code);
+                                                        toast({ title: "Copied", description: "Lobby code copied to clipboard" });
+                                                    }}
+                                                >
+                                                    Copy
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col gap-2">
+                                            <p className="text-sm text-gray-400 font-medium">
+                                                Your registration is confirmed! The host hasn't assigned lobby codes yet, or they are currently being processed.
+                                            </p>
+                                            <p className="text-xs text-[var(--color-piggy-deep-pink)] font-bold italic">
+                                                Refresh the page in a moment to see if your code appears.
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
 
                             <div className="flex flex-wrap gap-6 pt-4 text-sm font-mono text-gray-400">
                                 <div className="flex items-center gap-2 font-bold uppercase tracking-tight">
@@ -576,6 +642,28 @@ export function TournamentDetailsView({ tournamentId }: TournamentDetailsViewPro
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            <TournamentEditModal
+                isOpen={isEditModalOpen}
+                onClose={() => setIsEditModalOpen(false)}
+                tournament={{
+                    id: tournament.id,
+                    name: tournament.name,
+                    description: tournament.description,
+                    rules: tournament.rules,
+                    discordLink: tournament.discordLink,
+                    streamLink: tournament.streamLink,
+                    imageUrl: tournament.imageUrl,
+                    isPrivate: tournament.isPrivate,
+                    startDate: tournament.startDate,
+                    startTime: tournament.startTime,
+                    maxPlayers: tournament.maxPlayers,
+                    entryFeeAmount: tournament.entryFeeAmount,
+                    entryFeeToken: tournament.entryFeeToken,
+                    prizePoolAmount: tournament.prizePoolAmount,
+                    prizePoolToken: tournament.prizePoolToken,
+                }}
+            />
         </div>
     );
 }

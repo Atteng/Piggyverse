@@ -27,7 +27,7 @@ export function MobileBlocker() {
                     Mobile Release
                 </div>
                 <div className="text-lg font-mono text-white">
-                    12th February 2026
+                    Coming Soon
                 </div>
             </div>
         </div>

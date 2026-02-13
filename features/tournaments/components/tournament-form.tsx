@@ -96,6 +96,7 @@ const formSchema = z.object({
 
     isStreamed: z.boolean().default(false),
     streamLink: z.string().url("Invalid stream link").optional().or(z.literal("")),
+    inviteCodes: z.string().optional(), // CSV or newline-separated codes
 }).refine((data) => {
     if (data.isIncentivized === "incentivized") {
         return !!data.entryFeeAmount && !!data.entryFeeToken;
@@ -250,7 +251,11 @@ export function TournamentForm() {
                 isIncentivized: values.isIncentivized === "incentivized",
                 // Betting config handing (updated)
                 bettingMarkets: values.allowBetting ? values.bettingMarkets : [],
-                bettingConfig: undefined // Clear old field
+                bettingConfig: undefined, // Clear old field
+                // Parse invite codes from textarea (newline-separated)
+                inviteCodes: values.inviteCodes
+                    ? values.inviteCodes.split('\n').map(c => c.trim()).filter(Boolean)
+                    : undefined
             };
 
             await createTournament(tournamentData);
@@ -712,6 +717,71 @@ export function TournamentForm() {
                                     )}
                                 />
                             </div>
+
+                            {/* Lobby Codes */}
+                            <FormField
+                                control={form.control}
+                                name="inviteCodes"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="text-white">Lobby / Invite Codes (Optional)</FormLabel>
+                                        <FormDescription className="text-gray-400 text-xs">
+                                            Paste codes (one per line) or upload a CSV file. Each registered player will receive a unique code.
+                                        </FormDescription>
+                                        <FormControl>
+                                            <div className="space-y-2">
+                                                <Textarea
+                                                    placeholder="HRB_f_A4I_&#13;&#10;Bh-ONY1Ff1&#13;&#10;jUIklNeReO&#13;&#10;..."
+                                                    {...field}
+                                                    value={field.value ?? ""}
+                                                    className="min-h-[100px] border-white/10 bg-black/20 focus:border-[var(--color-piggy-deep-pink)] font-mono text-xs"
+                                                />
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="w-full border-white/10 bg-black/20 hover:bg-white/5"
+                                                    onClick={() => {
+                                                        const input = document.createElement('input');
+                                                        input.type = 'file';
+                                                        input.accept = '.csv,.txt';
+                                                        input.onchange = (e: any) => {
+                                                            const file = e.target?.files?.[0];
+                                                            if (file) {
+                                                                const reader = new FileReader();
+                                                                reader.onload = (event) => {
+                                                                    const text = event.target?.result as string;
+                                                                    const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+                                                                    const header = lines[0]?.toLowerCase();
+                                                                    let codes: string[] = [];
+
+                                                                    if (header?.includes('code')) {
+                                                                        const codeIndex = header.split(',').findIndex(h => h.includes('code'));
+                                                                        codes = lines.slice(1).map(line => {
+                                                                            const parts = line.split(',');
+                                                                            return parts[codeIndex]?.replace(/"/g, '').trim();
+                                                                        }).filter(Boolean);
+                                                                    } else {
+                                                                        codes = lines.map(line => line.split(',')[0]?.replace(/"/g, '').trim()).filter(Boolean);
+                                                                    }
+
+                                                                    field.onChange(codes.join('\n'));
+                                                                };
+                                                                reader.readAsText(file);
+                                                            }
+                                                        };
+                                                        input.click();
+                                                    }}
+                                                >
+                                                    <Upload className="w-4 h-4 mr-2" />
+                                                    Upload CSV File
+                                                </Button>
+                                            </div>
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
 
                             <FormField
                                 control={form.control}

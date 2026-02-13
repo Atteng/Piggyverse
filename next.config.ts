@@ -1,7 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  experimental: {
+    serverActions: {
+      allowedOrigins: ["miasmatic-foggy-jakob.ngrok-free.dev"],
+    },
+  },
 };
 
 export default nextConfig;

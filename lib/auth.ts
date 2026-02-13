@@ -39,6 +39,7 @@ export const authOptions: NextAuthOptions = {
         DiscordProvider({
             clientId: process.env.DISCORD_CLIENT_ID!,
             clientSecret: process.env.DISCORD_CLIENT_SECRET!,
+            authorization: { params: { scope: 'identify' } },
             profile(profile) {
                 console.log("Discord Profile:", profile);
                 const rawUsername = profile.username || `user${profile.id}`;

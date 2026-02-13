@@ -2,14 +2,34 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { createPublicClient, http, formatEther } from 'viem';
+import { createPublicClient, http, formatEther, decodeFunctionData, parseAbi, formatUnits } from 'viem';
 import { base } from 'viem/chains';
+import { BLOCKCHAIN_CONFIG } from '@/lib/blockchain-config';
 
 // Treasury address must match the one in intent
 if (!process.env.NEXT_PUBLIC_CONTRACT_PIGGYVERSE) {
     throw new Error("NEXT_PUBLIC_CONTRACT_PIGGYVERSE is not defined in environment variables");
 }
 const TREASURY_WALLET = process.env.NEXT_PUBLIC_CONTRACT_PIGGYVERSE.toLowerCase();
+
+// Token Contract Addresses
+const TOKEN_CONTRACTS: Record<string, string> = {
+    PIGGY: BLOCKCHAIN_CONFIG.CONTRACTS.PIGGY_TOKEN.toLowerCase(),
+    USDC: BLOCKCHAIN_CONFIG.CONTRACTS.USDC_TOKEN.toLowerCase(),
+    UP: BLOCKCHAIN_CONFIG.CONTRACTS.UP_TOKEN.toLowerCase(),
+};
+
+// Token Decimals
+const TOKEN_DECIMALS: Record<string, number> = {
+    PIGGY: 18,
+    USDC: 6,
+    UP: 18,
+};
+
+// ERC20 Transfer ABI for decoding
+const ERC20_ABI = parseAbi([
+    'function transfer(address to, uint256 amount) returns (bool)',
+]);
 
 // Initialize Viem Client (Base Network)
 const client = createPublicClient({
@@ -59,56 +79,114 @@ export async function POST(
             return NextResponse.json({ error: 'No payment expected for this registration' }, { status: 400 });
         }
 
+        const token = registration.tournament.entryFeeToken || 'PIGGY';
+        const expectedTokenAddress = TOKEN_CONTRACTS[token];
+        const decimals = TOKEN_DECIMALS[token] || 18;
+
         // Verify On-Chain
         try {
             const tx = await client.getTransaction({ hash: txHash as `0x${string}` });
 
-            // Check Recipient
-            if (tx.to?.toLowerCase() !== TREASURY_WALLET) {
-                return NextResponse.json({ error: 'Transaction not sent to Treasury' }, { status: 400 });
+            let actualRecipient = "";
+            let actualAmount = 0;
+
+            // 1. Check if it's an ERC20 Transfer
+            if (expectedTokenAddress) {
+                // If token is an ERC20, the tx 'to' must be the contract address
+                if (tx.to?.toLowerCase() !== expectedTokenAddress) {
+                    return NextResponse.json({
+                        error: `Transaction sent to wrong contract. Expected ${token} contract (${expectedTokenAddress}), but got ${tx.to}`
+                    }, { status: 400 });
+                }
+
+                // Decode transfer data
+                try {
+                    const { args, functionName } = decodeFunctionData({
+                        abi: ERC20_ABI,
+                        data: tx.input,
+                    });
+
+                    if (functionName !== 'transfer') {
+                        return NextResponse.json({ error: 'Not a transfer transaction' }, { status: 400 });
+                    }
+
+                    const [to, amount] = args as [string, bigint];
+                    actualRecipient = to.toLowerCase();
+                    actualAmount = parseFloat(formatUnits(amount, decimals));
+                } catch (decodeError) {
+                    console.error('Failed to decode tx data:', decodeError);
+                    return NextResponse.json({ error: 'Could not parse ERC20 transfer data. Ensure this is a direct transfer.' }, { status: 400 });
+                }
+            } else {
+                // 2. Native Transfer (ETH/MATIC)
+                actualRecipient = tx.to?.toLowerCase() || "";
+                actualAmount = parseFloat(formatEther(tx.value));
             }
 
-            // Check Amount
-            // We need to handle decimals. Assuming PIGGY has 18 decimals?
-            // Or validation uses strict string/float comparison?
-            // tx.value is BigInt (wei).
-            // expectedAmount is Float (e.g. 50.0012).
-            const txValueEth = formatEther(tx.value);
-            const txValueFloat = parseFloat(txValueEth);
-
-            // Allow small epsilon for float precision?
-            // expectedAmount: 50.0012
-            // txValue: 50.001200000000....
-            const epsilon = 0.000001;
-            if (Math.abs(txValueFloat - registration.expectedAmount) > epsilon) {
+            // Check Recipient
+            if (actualRecipient !== TREASURY_WALLET) {
                 return NextResponse.json({
-                    error: `Amount mismatch. Expected: ${registration.expectedAmount}, Got: ${txValueFloat}`
+                    error: `Recipient mismatch. Expected Treasury (${TREASURY_WALLET}), but transaction sent to ${actualRecipient}`
                 }, { status: 400 });
             }
 
-            // Mark as Paid
+            // Check Amount with epsilon
+            const epsilon = 0.000001;
+            if (Math.abs(actualAmount - registration.expectedAmount) > epsilon) {
+                return NextResponse.json({
+                    error: `Amount mismatch. Expected: ${registration.expectedAmount} ${token}, Got: ${actualAmount} ${token}`
+                }, { status: 400 });
+            }
+
+            // Check if tournament has invite codes and assign one
+            const availableCode = await prisma.tournamentInviteCode.findFirst({
+                where: {
+                    tournamentId: params.id,
+                    isUsed: false
+                }
+            });
+
+            const hasInviteCodes = await prisma.tournamentInviteCode.count({
+                where: { tournamentId: params.id }
+            }) > 0;
+
+            // Mark as Paid and Assign Code
             await prisma.tournamentRegistration.update({
                 where: { id: registration.id },
                 data: {
                     paymentStatus: 'COMPLETED',
                     txHash: txHash,
-                    registeredAt: new Date() // Update time to confirmation?
+                    registeredAt: new Date()
                 }
             });
 
-            // Increment Tournament Count
+            // Assign code if available
+            if (availableCode) {
+                await prisma.tournamentInviteCode.update({
+                    where: { id: availableCode.id },
+                    data: {
+                        isUsed: true,
+                        usedByUserId: session.user.id
+                    }
+                });
+            }
+
+            // Increment Tournament Count and Prize Pool
             await prisma.tournament.update({
                 where: { id: params.id },
                 data: {
-                    registeredPlayers: { increment: 1 }
+                    registeredPlayers: { increment: 1 },
+                    prizePoolAmount: { increment: actualAmount },
+                    // Set prize pool token if it's currently null
+                    prizePoolToken: registration.tournament.prizePoolToken || token
                 }
             });
 
-            return NextResponse.json({ success: true });
+            return NextResponse.json({ success: true, token, amount: actualAmount });
 
         } catch (chainError) {
             console.error('Chain validation failed:', chainError);
-            return NextResponse.json({ error: 'Transaction not found or invalid on BASE network' }, { status: 400 });
+            return NextResponse.json({ error: 'Transaction not found or invalid on blockchain' }, { status: 400 });
         }
 
     } catch (error) {

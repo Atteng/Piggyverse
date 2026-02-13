@@ -51,6 +51,7 @@ model User {
   chatMessages       ChatMessage[]
   leaderboardEntries LeaderboardEntry[]
   hostedGames        Game[]
+  claimedInviteCodes TournamentInviteCode[]
 
   @@map("users")
 }
@@ -195,6 +196,7 @@ model Tournament {
   // Relations
   registrations TournamentRegistration[]
   bettingMarkets BettingMarket[]
+  inviteCodes    TournamentInviteCode[]
 
   @@map("tournaments")
 }
@@ -216,6 +218,19 @@ model TournamentRegistration {
 
   @@unique([tournamentId, userId])
   @@map("tournament_registrations")
+}
+
+model TournamentInviteCode {
+  id           String     @id @default(cuid())
+  tournamentId String
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  code         String
+  isUsed       Boolean    @default(false)
+  usedByUserId String?
+  usedByUser   User?      @relation(fields: [usedByUserId], references: [id])
+  
+  @@unique([tournamentId, code])
+  @@map("tournament_invite_codes")
 }
 
 // ============================================

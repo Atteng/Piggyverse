@@ -134,14 +134,16 @@ export async function unregisterFromTournament(tournamentId: string) {
 
 export async function updateTournament(id: string, data: any) {
     const res = await fetch(`/api/tournaments/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
     });
+
     if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.error || 'Failed to update tournament');
+        throw new Error(error.error || "Failed to update tournament");
     }
+
     return res.json();
 }
 
