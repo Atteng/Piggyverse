@@ -194,8 +194,17 @@ export function PaymentDepositModal({
                             <div className="space-y-2">
                                 <Label className="text-gray-400 text-xs">To Treasury Address</Label>
                                 <div className="flex gap-2">
-                                    <Input readOnly value={paymentDetails.address} className="font-mono text-xs bg-black/20 border-white/10 h-10" />
-                                    <Button size="icon" variant="outline" className="shrink-0 border-white/10" onClick={() => copyToClipboard(paymentDetails.address)}>
+                                    <Input
+                                        readOnly
+                                        value={paymentDetails.address.replace(/['"]/g, '').trim()}
+                                        className="font-mono text-xs bg-black/20 border-white/10 h-10"
+                                    />
+                                    <Button
+                                        size="icon"
+                                        variant="outline"
+                                        className="shrink-0 border-white/10"
+                                        onClick={() => copyToClipboard(paymentDetails.address.replace(/['"]/g, '').trim())}
+                                    >
                                         <Copy className="w-4 h-4" />
                                     </Button>
                                 </div>
@@ -207,7 +216,7 @@ export function PaymentDepositModal({
                                 <Input
                                     placeholder="0x..."
                                     value={txHash}
-                                    onChange={(e) => setTxHash(e.target.value)}
+                                    onChange={(e) => setTxHash(e.target.value.replace(/['"]/g, '').trim())}
                                     className="bg-black/20 border-white/10 focus:border-[var(--color-piggy-deep-pink)]"
                                 />
                                 <p className="text-xs text-gray-500 text-right">Expires in: {timeLeft}</p>
