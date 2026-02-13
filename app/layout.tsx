@@ -27,6 +27,11 @@ const geistSans = Geist({
 export const metadata: Metadata = {
   title: "PiggyVerse | PiggyDAO",
   description: "The decentralized gaming hub for PiggyDAO",
+  icons: {
+    icon: "/logo.png",
+    shortcut: "/logo.png",
+    apple: "/logo.png",
+  },
 };
 
 export default function RootLayout({
