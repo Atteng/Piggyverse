@@ -80,6 +80,7 @@ const formSchema = z.object({
     isPrivate: z.boolean().default(false),
     rules: z.string().optional(),
     discordLink: z.string().url("Invalid Discord link").optional().or(z.literal("")),
+    lobbyUrl: z.string().url("Invalid Lobby link").optional().or(z.literal("")),
     isIncentivized: z.enum(["fun", "incentivized"]),
     entryFeeAmount: z.preprocess(
         (val) => (val === "" || val === undefined || val === null ? undefined : Number(val)),
@@ -97,6 +98,17 @@ const formSchema = z.object({
     isStreamed: z.boolean().default(false),
     streamLink: z.string().url("Invalid stream link").optional().or(z.literal("")),
     inviteCodes: z.string().optional(), // CSV or newline-separated codes
+    hasCustomRegistrationDeadline: z.boolean().default(false),
+    registrationDeadlineDate: z.date().optional(),
+    registrationDeadlineTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Invalid time format").optional().or(z.literal("")),
+}).refine((data) => {
+    if (data.hasCustomRegistrationDeadline) {
+        return !!data.registrationDeadlineDate && !!data.registrationDeadlineTime;
+    }
+    return true;
+}, {
+    message: "Registration deadline is required if enabled",
+    path: ["registrationDeadlineDate"],
 }).refine((data) => {
     if (data.isIncentivized === "incentivized") {
         return !!data.entryFeeAmount && !!data.entryFeeToken;
@@ -148,7 +160,10 @@ export function TournamentForm() {
             bettingMarkets: [],
 
             isStreamed: false,
-            streamLink: ""
+            streamLink: "",
+            hasCustomRegistrationDeadline: false,
+            registrationDeadlineDate: undefined,
+            registrationDeadlineTime: ""
         },
     });
 
@@ -239,12 +254,22 @@ export function TournamentForm() {
         }
 
         setIsSubmitting(true);
+        // Combine registration date and time into an ISO string
+        let registrationDeadlineISO = undefined;
+        if (values.hasCustomRegistrationDeadline && values.registrationDeadlineDate && values.registrationDeadlineTime) {
+            const [regHours, regMins] = values.registrationDeadlineTime.split(':');
+            const regDate = new Date(values.registrationDeadlineDate);
+            regDate.setHours(parseInt(regHours), parseInt(regMins));
+            registrationDeadlineISO = regDate.toISOString();
+        }
+
         try {
             // Format data for API
             const tournamentData = {
                 ...values,
                 // Ensure dates are ISO strings
                 startDate: values.startDate.toISOString(),
+                registrationDeadline: registrationDeadlineISO,
                 // Map frontend fields to backend expected fields
                 maxPlayers: values.playerCount,
                 platforms: [values.platform],
@@ -624,6 +649,71 @@ export function TournamentForm() {
                                     />
                                 </div>
 
+                                {/* Custom Registration Deadline */}
+                                <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-4">
+                                    <FormField
+                                        control={form.control}
+                                        name="hasCustomRegistrationDeadline"
+                                        render={({ field }) => (
+                                            <FormItem className="flex items-center justify-between space-y-0">
+                                                <div>
+                                                    <FormLabel className="text-white font-bold">Custom Registration Deadline</FormLabel>
+                                                    <FormDescription className="text-xs text-gray-400">
+                                                        Allow late entry or close registration before the start time.
+                                                    </FormDescription>
+                                                </div>
+                                                <FormControl>
+                                                    <Switch
+                                                        checked={field.value}
+                                                        onCheckedChange={field.onChange}
+                                                    />
+                                                </FormControl>
+                                            </FormItem>
+                                        )}
+                                    />
+
+                                    {form.watch("hasCustomRegistrationDeadline") && (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in slide-in-from-top-2 duration-200">
+                                            <FormField
+                                                control={form.control}
+                                                name="registrationDeadlineDate"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel className="text-xs text-gray-400 font-bold uppercase tracking-tight">Deadline Date</FormLabel>
+                                                        <FormControl>
+                                                            <Input
+                                                                type="date"
+                                                                onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : undefined)}
+                                                                value={field.value ? format(field.value, "yyyy-MM-dd") : ""}
+                                                                className="h-10 border-white/10 bg-black/20 focus:border-[var(--color-piggy-deep-pink)] [color-scheme:dark] text-white"
+                                                            />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+
+                                            <FormField
+                                                control={form.control}
+                                                name="registrationDeadlineTime"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel className="text-xs text-gray-400 font-bold uppercase tracking-tight">Deadline Time</FormLabel>
+                                                        <FormControl>
+                                                            <Input
+                                                                type="time"
+                                                                {...field}
+                                                                className="h-10 border-white/10 bg-black/20 focus:border-[var(--color-piggy-deep-pink)] [color-scheme:dark] text-white"
+                                                            />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+
                                 {/* Toggles Row */}
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-white/10">
                                     <FormField
@@ -712,6 +802,24 @@ export function TournamentForm() {
                                             <FormControl>
                                                 <Input placeholder="https://discord.gg/..." {...field} value={field.value ?? ""} className="h-12 border-white/10 bg-black/20 focus:border-[var(--color-piggy-deep-pink)]" />
                                             </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                {/* Lobby URL */}
+                                <FormField
+                                    control={form.control}
+                                    name="lobbyUrl"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="text-white">Tournament / Lobby URL (Direct Link)</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="https://game-lobby.com/join/..." {...field} value={field.value ?? ""} className="h-12 border-white/10 bg-black/20 focus:border-[var(--color-piggy-deep-pink)]" />
+                                            </FormControl>
+                                            <FormDescription className="text-gray-400 text-xs">
+                                                Provide a direct link for players to join the lobby if available.
+                                            </FormDescription>
                                             <FormMessage />
                                         </FormItem>
                                     )}
@@ -1118,6 +1226,9 @@ export function TournamentForm() {
 
                                     <div className="text-gray-400">Discord</div>
                                     <div className="font-bold text-blue-400 text-right truncate max-w-[200px] ml-auto">{form.getValues("discordLink") || "None"}</div>
+
+                                    <div className="text-gray-400">Lobby URL</div>
+                                    <div className="font-bold text-blue-400 text-right truncate max-w-[200px] ml-auto">{form.getValues("lobbyUrl") || "None"}</div>
 
                                     <div className="border-t border-white/10 col-span-2 my-2" />
 

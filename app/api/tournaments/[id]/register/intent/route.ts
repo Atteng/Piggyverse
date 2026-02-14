@@ -31,6 +31,15 @@ export async function POST(
             return NextResponse.json({ error: 'Tournament not found' }, { status: 404 });
         }
 
+        // Validate registration deadline
+        const deadline = tournament.registrationDeadline || tournament.startDate;
+        if (new Date() > new Date(deadline)) {
+            return NextResponse.json(
+                { error: 'Registration deadline has passed' },
+                { status: 403 }
+            );
+        }
+
         if (!tournament.entryFeeAmount || tournament.entryFeeAmount <= 0) {
             return NextResponse.json({ error: 'This tournament is free' }, { status: 400 });
         }

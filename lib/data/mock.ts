@@ -248,7 +248,7 @@ export const GAME_MODES = {
 
 export const TOKENS = [
     { symbol: "PIGGY", name: "Piggy Token", icon: "🐷" },
-    { symbol: "SUP", name: "SUP Token", icon: "⬆️" },
+    { symbol: "UP", name: "UP Token", icon: "⬆️" },
     { symbol: "USDC", name: "USD Coin", icon: "💲" }
 ];
 

@@ -42,6 +42,7 @@ const updateSchema = z.object({
     description: z.string().optional(),
     rules: z.string().optional(),
     discordLink: z.string().url("Invalid Discord link").optional().or(z.literal("")),
+    lobbyUrl: z.string().url("Invalid Lobby link").optional().or(z.literal("")),
     streamLink: z.string().url("Invalid stream link").optional().or(z.literal("")),
     imageUrl: z.string().url("Invalid image URL").optional().or(z.literal("")),
     isPrivate: z.boolean().optional(),
@@ -54,6 +55,10 @@ const updateSchema = z.object({
     entryFeeToken: z.string().optional(),
     prizePoolAmount: z.coerce.number().min(0).optional(),
     prizePoolToken: z.string().optional(),
+
+    registrationDeadlineDate: z.string().optional().or(z.literal("")),
+    registrationDeadlineTime: z.string().optional().or(z.literal("")),
+    hasCustomRegistrationDeadline: z.boolean().optional(),
 });
 
 type UpdateFormData = z.infer<typeof updateSchema>;
@@ -69,6 +74,7 @@ interface TournamentEditModalProps {
         discordLink?: string | null;
         streamLink?: string | null;
         imageUrl?: string | null;
+        lobbyUrl?: string | null;
         isPrivate?: boolean;
         startDate: string;
         startTime?: string;
@@ -77,6 +83,7 @@ interface TournamentEditModalProps {
         entryFeeToken?: string | null;
         prizePoolAmount?: number | null;
         prizePoolToken?: string | null;
+        registrationDeadline?: string | Date | null;
     };
 }
 
@@ -98,6 +105,7 @@ export function TournamentEditModal({ isOpen, onClose, tournament }: TournamentE
             discordLink: tournament.discordLink || "",
             streamLink: tournament.streamLink || "",
             imageUrl: tournament.imageUrl || "",
+            lobbyUrl: tournament.lobbyUrl || "",
             isPrivate: tournament.isPrivate || false,
             startDate: tournament.startDate ? new Date(tournament.startDate).toISOString().split('T')[0] : "",
             startTime: tournament.startTime || "",
@@ -106,6 +114,13 @@ export function TournamentEditModal({ isOpen, onClose, tournament }: TournamentE
             entryFeeToken: tournament.entryFeeToken || "USDC",
             prizePoolAmount: tournament.prizePoolAmount || 0,
             prizePoolToken: tournament.prizePoolToken || "USDC",
+            hasCustomRegistrationDeadline: !!tournament.registrationDeadline,
+            registrationDeadlineDate: tournament.registrationDeadline ? new Date(tournament.registrationDeadline).toISOString().split('T')[0] : "",
+            registrationDeadlineTime: tournament.registrationDeadline ?
+                (() => {
+                    const d = new Date(tournament.registrationDeadline);
+                    return `${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}`;
+                })() : "",
         },
     });
 
@@ -147,6 +162,16 @@ export function TournamentEditModal({ isOpen, onClose, tournament }: TournamentE
             const timeStr = updates.startTime || '00:00';
             const dateTime = new Date(`${dateStr}T${timeStr}:00`);
             updates.startDate = dateTime.toISOString() as any;
+        }
+
+        // Handle Registration Deadline
+        if (data.hasCustomRegistrationDeadline && data.registrationDeadlineDate && data.registrationDeadlineTime) {
+            const [regHours, regMins] = data.registrationDeadlineTime.split(':');
+            const regDate = new Date(data.registrationDeadlineDate);
+            regDate.setHours(parseInt(regHours), parseInt(regMins));
+            (updates as any).registrationDeadline = regDate.toISOString();
+        } else if (data.hasCustomRegistrationDeadline === false) {
+            (updates as any).registrationDeadline = null; // Reset to default (startDate)
         }
 
         // Remove startTime from updates as it's merged into startDate
@@ -262,6 +287,20 @@ export function TournamentEditModal({ isOpen, onClose, tournament }: TournamentE
                                     </FormItem>
                                 )}
                             />
+
+                            <FormField
+                                control={form.control}
+                                name="lobbyUrl"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Lobby / Join Link</FormLabel>
+                                        <FormControl>
+                                            <Input {...field} placeholder="https://game-lobby.com/..." className="bg-black/20 border-white/10" />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
                         </div>
 
                         <FormField
@@ -318,19 +357,81 @@ export function TournamentEditModal({ isOpen, onClose, tournament }: TournamentE
                                     name="startTime"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Start Time</FormLabel>
+                                            <FormLabel className="text-white">Start Time</FormLabel>
                                             <FormControl>
                                                 <Input
-                                                    {...field}
                                                     type="time"
+                                                    {...field}
+                                                    className="bg-black/40 border-white/10 text-white [color-scheme:dark]"
                                                     disabled={tournamentStarted}
-                                                    className="bg-black/20 border-white/10 disabled:opacity-50"
                                                 />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     )}
                                 />
+                            </div>
+
+                            <div className="space-y-4 p-4 border border-white/10 rounded-xl bg-white/5">
+                                <FormField
+                                    control={form.control}
+                                    name="hasCustomRegistrationDeadline"
+                                    render={({ field }) => (
+                                        <FormItem className="flex items-center justify-between space-y-0">
+                                            <div>
+                                                <FormLabel className="text-white text-sm font-bold">Custom Registration Deadline</FormLabel>
+                                                <FormDescription className="text-[10px] text-gray-500">
+                                                    Allow late entry or close registration early.
+                                                </FormDescription>
+                                            </div>
+                                            <FormControl>
+                                                <Switch
+                                                    checked={field.value}
+                                                    onCheckedChange={field.onChange}
+                                                />
+                                            </FormControl>
+                                        </FormItem>
+                                    )}
+                                />
+
+                                {form.watch("hasCustomRegistrationDeadline") && (
+                                    <div className="grid grid-cols-2 gap-4 pt-2 border-t border-white/5">
+                                        <FormField
+                                            control={form.control}
+                                            name="registrationDeadlineDate"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel className="text-[10px] text-gray-400">Deadline Date</FormLabel>
+                                                    <FormControl>
+                                                        <Input
+                                                            type="date"
+                                                            {...field}
+                                                            className="h-9 bg-black/40 border-white/10 text-white text-xs [color-scheme:dark]"
+                                                        />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name="registrationDeadlineTime"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel className="text-[10px] text-gray-400">Deadline Time</FormLabel>
+                                                    <FormControl>
+                                                        <Input
+                                                            type="time"
+                                                            {...field}
+                                                            className="h-9 bg-black/40 border-white/10 text-white text-xs [color-scheme:dark]"
+                                                        />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
+                                )}
                             </div>
 
                             <FormField

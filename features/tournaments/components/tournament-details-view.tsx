@@ -11,6 +11,7 @@ import { useSession, signIn } from "next-auth/react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useCallback } from "react";
 import { getTournamentDetails, registerForTournament, unregisterFromTournament, deleteTournament } from "@/lib/api/tournaments";
 import {
     AlertDialog,
@@ -50,16 +51,57 @@ export function TournamentDetailsView({ tournamentId }: TournamentDetailsViewPro
     const [selectedMarket, setSelectedMarket] = useState<any>(null);
     const [selectedOutcome, setSelectedOutcome] = useState<any>(null);
     const [isBetModalOpen, setIsBetModalOpen] = useState(false);
-
-    // Resolution Modal State
-    const [resolutionMarket, setResolutionMarket] = useState<any>(null);
-    const [isResolutionModalOpen, setIsResolutionModalOpen] = useState(false);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
     // Fetch Tournament Details
     const { data: tournament, isLoading, error } = useQuery({
         queryKey: ['tournament', tournamentId],
         queryFn: () => getTournamentDetails(tournamentId)
     });
+
+    // Resolution Modal State
+    const [resolutionMarket, setResolutionMarket] = useState<any>(null);
+    const [isResolutionModalOpen, setIsResolutionModalOpen] = useState(false);
+
+    // Countdown Logic
+    const [timeLeft, setTimeLeft] = useState<string>("");
+    const [isRegistrationExpired, setIsRegistrationExpired] = useState(false);
+
+    const calculateTimeLeft = useCallback(() => {
+        if (!tournament) return;
+
+        const deadline = tournament.registrationDeadline ? new Date(tournament.registrationDeadline) : new Date(tournament.startDate);
+        const now = new Date();
+        const diff = deadline.getTime() - now.getTime();
+
+        if (diff <= 0) {
+            setTimeLeft("Expired");
+            setIsRegistrationExpired(true);
+            return;
+        }
+
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+        const minutes = Math.floor((diff / 1000 / 60) % 60);
+        const seconds = Math.floor((diff / 1000) % 60);
+
+        if (days > 0) {
+            setTimeLeft(`${days}d ${hours}h ${minutes}m`);
+        } else if (hours > 0) {
+            setTimeLeft(`${hours}h ${minutes}m ${seconds}s`);
+        } else {
+            setTimeLeft(`${minutes}m ${seconds}s`);
+        }
+        setIsRegistrationExpired(false);
+    }, [tournament]);
+
+    useEffect(() => {
+        calculateTimeLeft();
+        const timer = setInterval(calculateTimeLeft, 1000);
+        return () => clearInterval(timer);
+    }, [calculateTimeLeft]);
 
     // ... (rest of hook calls) ... (Wait, I need to match original content)
 
@@ -104,13 +146,11 @@ export function TournamentDetailsView({ tournamentId }: TournamentDetailsViewPro
 
 
     // Edit Modal State
-    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-
     const handleEditClick = () => {
         setIsEditModalOpen(true);
     };
 
-    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
 
     const handleDelete = () => {
         deleteMutation.mutate();
@@ -133,7 +173,7 @@ export function TournamentDetailsView({ tournamentId }: TournamentDetailsViewPro
     };
 
     // Payment Modal State
-    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+
 
     const handleRegisterClick = () => {
         if (status !== "authenticated") {
@@ -166,7 +206,7 @@ export function TournamentDetailsView({ tournamentId }: TournamentDetailsViewPro
     const isPaid = !tournament.entryFeeAmount || tournament.entryFeeAmount === 0 || userRegistration?.paymentStatus === 'COMPLETED';
     const isRegistered = !!userRegistration && isPaid;
     const isPendingPayment = !!userRegistration && !isPaid;
-    const isHost = session?.user?.id === tournament.host?.id;
+    const isHost = !!session?.user?.id && session?.user?.id === tournament.host?.id;
 
     // Filter participants for display (only show paid/confirmed)
     const confirmedParticipants = tournament.registrations?.filter((p: any) =>
@@ -209,9 +249,11 @@ export function TournamentDetailsView({ tournamentId }: TournamentDetailsViewPro
                             <Badge className={cn(
                                 "text-white border-0 capitalize px-3 py-1 text-xs font-black uppercase tracking-tighter",
                                 tournament.status === "ACTIVE" ? "bg-red-500 animate-pulse" :
-                                    tournament.status === "PENDING" ? "bg-green-500" : "bg-blue-500"
+                                    (tournament.status === "PENDING" && !isRegistrationExpired) ? "bg-green-500" : "bg-gray-500"
                             )}>
-                                {tournament.status === "PENDING" ? "Registration Open" : tournament.status}
+                                {tournament.status === "PENDING"
+                                    ? (isRegistrationExpired ? "Registration Closed" : "Registration Open")
+                                    : tournament.status}
                             </Badge>
                         </div>
 
@@ -252,54 +294,107 @@ export function TournamentDetailsView({ tournamentId }: TournamentDetailsViewPro
                                 {tournament.description}
                             </p>
 
-                            {/* Lobby Code Display */}
-                            {isRegistered && (
-                                <div className="bg-black/40 backdrop-blur-md border border-white/10 rounded-2xl p-6 mt-6 max-w-xl animate-in fade-in slide-in-from-top-4 duration-500">
-                                    <div className="flex items-center justify-between mb-4">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-8 h-8 rounded-full bg-[var(--color-piggy-deep-pink)]/20 flex items-center justify-center">
-                                                <Shield className="w-4 h-4 text-[var(--color-piggy-deep-pink)]" />
+                            {/* Lobby Access Display */}
+                            {(isRegistered || isHost) && (
+                                <div className="bg-black/40 backdrop-blur-md border border-white/10 rounded-2xl p-4 mt-6 max-w-xl animate-in fade-in slide-in-from-top-4 duration-500">
+                                    <div className="flex items-center justify-between gap-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-xl bg-[var(--color-piggy-deep-pink)]/20 flex items-center justify-center shrink-0">
+                                                <Shield className="w-5 h-5 text-[var(--color-piggy-deep-pink)]" />
                                             </div>
-                                            <h3 className="text-white font-black uppercase tracking-tighter">
-                                                Tournament Access
-                                            </h3>
+                                            <div>
+                                                <div className="flex items-center gap-2 mb-0.5">
+                                                    <h3 className="text-white text-sm font-black uppercase tracking-tighter">
+                                                        Tournament Access
+                                                    </h3>
+                                                    {(tournament.inviteCodes?.[0]?.code || isHost) ? (
+                                                        <Badge className="bg-[var(--color-piggy-super-green)] text-black text-[10px] h-4 font-bold uppercase tracking-tight py-0">
+                                                            {isRegistered ? "Code Ready" : isHost ? "Host View" : "Code Pending"}
+                                                        </Badge>
+                                                    ) : (
+                                                        <Badge variant="outline" className="text-yellow-500 border-yellow-500/50 text-[10px] h-4 uppercase tracking-tight py-0">Code Pending</Badge>
+                                                    )}
+                                                </div>
+                                                <p className="text-[11px] text-gray-400 font-medium leading-tight">
+                                                    {isHost
+                                                        ? "Review the access links you've provided for participants."
+                                                        : "Use these details to join the game lobby or Discord."}
+                                                </p>
+                                            </div>
                                         </div>
-                                        {tournament.inviteCodes?.[0]?.code ? (
-                                            <Badge className="bg-[var(--color-piggy-super-green)] text-black font-bold uppercase tracking-tight">Code Assigned</Badge>
-                                        ) : (
-                                            <Badge variant="outline" className="text-yellow-500 border-yellow-500/50 uppercase tracking-tight">Code Pending</Badge>
-                                        )}
+
+                                        <div className="flex items-center gap-2">
+                                            {tournament.lobbyUrl && (
+                                                <Button
+                                                    size="sm"
+                                                    onClick={() => window.open(tournament.lobbyUrl, '_blank')}
+                                                    className="bg-[var(--color-piggy-deep-pink)] hover:bg-[var(--color-piggy-deep-pink)]/80 text-white font-black uppercase tracking-tighter text-[10px] h-8 px-3 rounded-lg flex items-center gap-1.5"
+                                                >
+                                                    Join Lobby
+                                                </Button>
+                                            )}
+                                            {tournament.discordLink && (
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => window.open(tournament.discordLink, '_blank')}
+                                                    className="border-white/10 bg-black/40 hover:bg-white/10 text-white font-black uppercase tracking-tighter text-[10px] h-8 px-3 rounded-lg"
+                                                >
+                                                    Discord
+                                                </Button>
+                                            )}
+                                        </div>
                                     </div>
 
-                                    {tournament.inviteCodes?.[0]?.code ? (
-                                        <div className="space-y-3">
-                                            <p className="text-sm text-gray-400 font-medium">
-                                                Use this code to join the game lobby or private Discord channel.
-                                            </p>
-                                            <div className="bg-black/60 rounded-xl p-4 flex items-center justify-between border border-white/5 group hover:border-[var(--color-piggy-deep-pink)]/30 transition-colors">
-                                                <code className="text-3xl font-black text-white font-mono tracking-[0.2em]">
+                                    {tournament.inviteCodes?.[0]?.code && !isHost ? (
+                                        <div className="mt-3 bg-black/60 rounded-xl p-2.5 flex items-center justify-between border border-white/5 group hover:border-[var(--color-piggy-deep-pink)]/30 transition-colors">
+                                            <div className="flex flex-col ml-1">
+                                                <span className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">Your Lobby Code</span>
+                                                <code className="text-xl font-black text-white font-mono tracking-[0.1em]">
                                                     {tournament.inviteCodes[0].code}
                                                 </code>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="text-gray-400 hover:text-white hover:bg-white/5"
-                                                    onClick={() => {
-                                                        navigator.clipboard.writeText(tournament.inviteCodes[0].code);
-                                                        toast({ title: "Copied", description: "Lobby code copied to clipboard" });
-                                                    }}
-                                                >
-                                                    Copy
-                                                </Button>
                                             </div>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="text-gray-400 hover:text-white hover:bg-white/5 h-8 px-3 text-[10px] font-bold uppercase"
+                                                onClick={() => {
+                                                    navigator.clipboard.writeText(tournament.inviteCodes![0].code);
+                                                    toast({ title: "Copied", description: "Lobby code copied to clipboard" });
+                                                }}
+                                            >
+                                                Copy
+                                            </Button>
+                                        </div>
+                                    ) : isHost && (tournament.inviteCodes?.length || 0) > 0 ? (
+                                        <div className="mt-3 bg-black/60 rounded-xl p-3 border border-white/10">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Code Assignment Status</span>
+                                                <span className="text-[10px] text-[var(--color-piggy-deep-pink)] font-bold">
+                                                    {tournament.inviteCodes.filter((c: any) => c.isUsed).length} / {tournament.inviteCodes.length} Assigned
+                                                </span>
+                                            </div>
+                                            <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+                                                <div
+                                                    className="h-full bg-[var(--color-piggy-deep-pink)] transition-all duration-500"
+                                                    style={{ width: `${(tournament.inviteCodes.filter((c: any) => c.isUsed).length / tournament.inviteCodes.length) * 100}%` }}
+                                                />
+                                            </div>
+                                            <p className="text-[10px] text-gray-500 mt-2 text-center">
+                                                Remaining codes will be automatically assigned to new participants.
+                                            </p>
                                         </div>
                                     ) : (
-                                        <div className="flex flex-col gap-2">
-                                            <p className="text-sm text-gray-400 font-medium">
-                                                Your registration is confirmed! The host hasn't assigned lobby codes yet, or they are currently being processed.
+                                        <div className="mt-3 bg-black/60 rounded-xl p-3 border border-dashed border-white/10 text-center">
+                                            <p className="text-[11px] text-gray-400 font-medium mb-1">
+                                                {isHost
+                                                    ? "No invite codes have been uploaded for this tournament."
+                                                    : "Lobby code pending assignment by host."}
                                             </p>
-                                            <p className="text-xs text-[var(--color-piggy-deep-pink)] font-bold italic">
-                                                Refresh the page in a moment to see if your code appears.
+                                            <p className="text-[10px] text-[var(--color-piggy-deep-pink)] font-bold italic">
+                                                {isHost
+                                                    ? "You can add codes by editing your tournament."
+                                                    : "Check back in a moment or stay tuned on Discord."}
                                             </p>
                                         </div>
                                     )}
@@ -334,9 +429,22 @@ export function TournamentDetailsView({ tournamentId }: TournamentDetailsViewPro
                                     )}
                                 </div>
                                 {tournament.isIncentivized && (
-                                    <div className="flex items-center gap-2 text-white font-black uppercase tracking-tighter bg-[var(--color-piggy-deep-pink)]/10 px-3 py-1 rounded-full border border-[var(--color-piggy-deep-pink)]/20">
-                                        <Coins className="w-4 h-4 text-[var(--color-piggy-deep-pink)]" />
-                                        Prize Pool: {tournament.prizePoolAmount} {tournament.prizePoolToken}
+                                    <div className="flex flex-col gap-1">
+                                        <div className="flex items-center gap-2 text-white font-black uppercase tracking-tighter bg-[var(--color-piggy-deep-pink)]/10 px-3 py-1 rounded-full border border-[var(--color-piggy-deep-pink)]/20 w-fit">
+                                            <Coins className="w-4 h-4 text-[var(--color-piggy-deep-pink)]" />
+                                            Prize Pool: {tournament.prizePoolAmount} {tournament.prizePoolToken}
+                                        </div>
+                                        {isHost && (tournament as any).prizePoolSeed !== undefined && (
+                                            <span className="text-[9px] text-gray-500 font-bold uppercase ml-2">
+                                                {(tournament as any).prizePoolSeed} Seed + {(tournament.prizePoolAmount || 0) - ((tournament as any).prizePoolSeed || 0)} Revenue
+                                            </span>
+                                        )}
+                                    </div>
+                                )}
+                                {!isRegistrationExpired && tournament.status === 'PENDING' && (
+                                    <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[#ff4d94] bg-[#ff4d94]/10 px-3 py-1.5 rounded-lg border border-[#ff4d94]/20 animate-pulse">
+                                        <Clock className="w-3.5 h-3.5" />
+                                        Registration Ends In: {timeLeft}
                                     </div>
                                 )}
                             </div>
@@ -364,23 +472,36 @@ export function TournamentDetailsView({ tournamentId }: TournamentDetailsViewPro
                                 ) : isPendingPayment ? (
                                     <Button
                                         onClick={() => setIsPaymentModalOpen(true)}
-                                        className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-black font-black uppercase tracking-tighter h-12 rounded-xl shadow-[0_0_20px_rgba(234,179,8,0.4)]"
+                                        disabled={isRegistrationExpired}
+                                        className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-black font-black uppercase tracking-tighter h-12 rounded-xl shadow-[0_0_20px_rgba(234,179,8,0.4)] disabled:opacity-50"
                                     >
-                                        Complete Payment
+                                        {isRegistrationExpired ? "Registration Closed" : "Complete Payment"}
                                     </Button>
                                 ) : (
                                     <Button
                                         onClick={handleRegisterClick}
-                                        disabled={registerMutation.isPending || (confirmedParticipants.length >= tournament.maxPlayers)}
-                                        className="flex-1 bg-[var(--color-piggy-deep-pink)] hover:bg-[var(--color-piggy-deep-pink)]/80 text-white font-black uppercase tracking-tighter h-12 rounded-xl shadow-[0_0_20px_rgba(255,47,122,0.4)]"
+                                        disabled={registerMutation.isPending || (confirmedParticipants.length >= tournament.maxPlayers) || (isRegistrationExpired && tournament.status === 'PENDING')}
+                                        className="flex-1 bg-[var(--color-piggy-deep-pink)] hover:bg-[var(--color-piggy-deep-pink)]/80 text-white font-black uppercase tracking-tighter h-12 rounded-xl shadow-[0_0_20px_rgba(255,47,122,0.4)] disabled:opacity-50 disabled:grayscale"
                                     >
                                         {registerMutation.isPending ? "Registering..." :
-                                            tournament.status === "ACTIVE" ? "Watch Stream" : "Register Now"}
+                                            (isRegistrationExpired && tournament.status === 'PENDING') ? "Registration Closed" :
+                                                tournament.status === "ACTIVE" ? "Watch Stream" : "Register Now"}
                                     </Button>
                                 )}
 
-                                <Button variant="outline" className="h-12 w-12 rounded-xl border-white/10 bg-black/40 hover:bg-white/10">
-                                    <Share2 className="w-5 h-5" />
+                                <Button
+                                    variant="outline"
+                                    className="h-12 w-12 rounded-xl border-white/10 bg-black/40 hover:bg-white/10"
+                                    onClick={() => {
+                                        const url = window.location.href;
+                                        navigator.clipboard.writeText(url);
+                                        toast({
+                                            title: "Link Copied!",
+                                            description: "Tournament link has been copied to your clipboard.",
+                                        });
+                                    }}
+                                >
+                                    <Share2 className="w-5 h-5 text-white" />
                                 </Button>
                             </div>
                         </div>
@@ -480,14 +601,26 @@ export function TournamentDetailsView({ tournamentId }: TournamentDetailsViewPro
                                 <div className="bg-black/20 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
                                     <h3 className="text-xl font-bold text-white mb-4">Participants ({confirmedParticipants.length})</h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                        {confirmedParticipants.map((p: any) => (
-                                            <div key={p.id} className="flex items-center gap-3 p-3 bg-white/5 rounded-lg border border-white/5">
-                                                <div className="w-8 h-8 bg-[var(--color-piggy-deep-pink)] rounded-full flex items-center justify-center font-bold text-xs">
-                                                    {p.user.username?.[0] || "U"}
+                                        {confirmedParticipants.map((p: any) => {
+                                            const assignedCode = isHost ? tournament.inviteCodes?.find((c: any) => c.usedByUserId === p.user.id)?.code : null;
+                                            return (
+                                                <div key={p.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5 group hover:border-white/10 transition-colors">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-8 h-8 bg-black/40 rounded-full flex items-center justify-center font-bold text-xs text-[var(--color-piggy-deep-pink)] border border-white/5">
+                                                            {p.user.username?.[0] || "U"}
+                                                        </div>
+                                                        <span className="font-bold text-gray-300">{p.user.username || "Anonymous"}</span>
+                                                    </div>
+                                                    {isHost && assignedCode && (
+                                                        <div className="flex items-center gap-2">
+                                                            <code className="text-[10px] font-mono bg-black/40 text-[var(--color-piggy-super-green)] px-2 py-1 rounded border border-[var(--color-piggy-super-green)]/20">
+                                                                {assignedCode}
+                                                            </code>
+                                                        </div>
+                                                    )}
                                                 </div>
-                                                <span className="font-bold text-gray-300">{p.user.username || "Anonymous"}</span>
-                                            </div>
-                                        ))}
+                                            );
+                                        })}
                                         {confirmedParticipants.length === 0 && <div className="text-gray-400">No participants yet.</div>}
                                     </div>
                                 </div>
@@ -583,39 +716,43 @@ export function TournamentDetailsView({ tournamentId }: TournamentDetailsViewPro
                         </Tabs>
                     </div>
                 </div>
-            </div>
+            </div >
 
             {/* Bet Placement Modal */}
-            {selectedOutcome && (
-                <BetPlacementModal
-                    open={isBetModalOpen}
-                    onOpenChange={setIsBetModalOpen}
-                    marketId={selectedMarket?.id}
-                    outcomeId={selectedOutcome?.id}
-                    tournamentName={tournament.name}
-                    outcomeName={selectedOutcome?.label}
-                    odds={selectedOutcome?.currentOdds || 1.0}
-                    minBet={selectedMarket?.minBet || 1}
-                    maxBet={selectedMarket?.maxBet || 1000}
-                    token={selectedMarket?.poolPreSeedToken || "USDC"}
-                />
-            )}
+            {
+                selectedOutcome && (
+                    <BetPlacementModal
+                        open={isBetModalOpen}
+                        onOpenChange={setIsBetModalOpen}
+                        marketId={selectedMarket?.id}
+                        outcomeId={selectedOutcome?.id}
+                        tournamentName={tournament.name}
+                        outcomeName={selectedOutcome?.label}
+                        odds={selectedOutcome?.currentOdds || 1.0}
+                        minBet={selectedMarket?.minBet || 1}
+                        maxBet={selectedMarket?.maxBet || 1000}
+                        token={selectedMarket?.poolPreSeedToken || "USDC"}
+                    />
+                )
+            }
 
             {/* Payment / Registration Modal */}
-            {tournament && (
-                <PaymentDepositModal
-                    isOpen={isPaymentModalOpen}
-                    onClose={() => setIsPaymentModalOpen(false)}
-                    tournamentId={tournamentId}
-                    entryFeeAmount={tournament.entryFeeAmount || 0}
-                    entryFeeToken={tournament.entryFeeToken || "PIGGY"}
-                    onSuccess={() => {
-                        queryClient.invalidateQueries({ queryKey: ['tournament', tournamentId] });
-                        toast({ title: "Registration Successful", description: "You are now in the tournament!" });
-                        setIsPaymentModalOpen(false);
-                    }}
-                />
-            )}
+            {
+                tournament && (
+                    <PaymentDepositModal
+                        isOpen={isPaymentModalOpen}
+                        onClose={() => setIsPaymentModalOpen(false)}
+                        tournamentId={tournamentId}
+                        entryFeeAmount={tournament.entryFeeAmount || 0}
+                        entryFeeToken={tournament.entryFeeToken || "PIGGY"}
+                        onSuccess={() => {
+                            queryClient.invalidateQueries({ queryKey: ['tournament', tournamentId] });
+                            toast({ title: "Registration Successful", description: "You are now in the tournament!" });
+                            setIsPaymentModalOpen(false);
+                        }}
+                    />
+                )
+            }
 
             {/* Market Resolution Modal */}
             <MarketResolutionModal
@@ -654,6 +791,7 @@ export function TournamentDetailsView({ tournamentId }: TournamentDetailsViewPro
                     discordLink: tournament.discordLink,
                     streamLink: tournament.streamLink,
                     imageUrl: tournament.imageUrl,
+                    lobbyUrl: tournament.lobbyUrl,
                     isPrivate: tournament.isPrivate,
                     startDate: tournament.startDate,
                     startTime: tournament.startTime,
@@ -664,6 +802,6 @@ export function TournamentDetailsView({ tournamentId }: TournamentDetailsViewPro
                     prizePoolToken: tournament.prizePoolToken,
                 }}
             />
-        </div>
+        </div >
     );
 }

@@ -111,9 +111,12 @@ export async function POST(request: NextRequest) {
             isPrivate,
             isStreamed,
             streamLink,
+            discordLink,
+            lobbyUrl,
             allowBetting,
             bettingMarkets,
             inviteCodes,
+            registrationDeadline,
         } = body;
 
         if (!name || !gameId || !maxPlayers || !startDate || !startTime) {
@@ -135,10 +138,12 @@ export async function POST(request: NextRequest) {
                 maxPlayers,
                 startDate: new Date(startDate),
                 startTime,
+                registrationDeadline: registrationDeadline ? new Date(registrationDeadline) : null,
                 isIncentivized: isIncentivized || false,
                 entryFeeAmount,
                 entryFeeToken,
-                prizePoolAmount,
+                prizePoolAmount: prizePoolAmount || 0,
+                prizePoolSeed: prizePoolAmount || 0,
                 prizePoolToken,
                 prizeDistribution,
                 rules,
@@ -146,6 +151,8 @@ export async function POST(request: NextRequest) {
                 isPrivate: isPrivate || false,
                 isStreamed: isStreamed || false,
                 streamLink,
+                discordLink,
+                lobbyUrl,
                 allowBetting: allowBetting || false,
                 inviteCodes: inviteCodes && inviteCodes.length > 0 ? {
                     create: inviteCodes.map((code: string) => ({ code }))

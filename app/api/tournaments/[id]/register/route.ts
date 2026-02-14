@@ -40,6 +40,15 @@ export async function POST(
             );
         }
 
+        // Validate registration deadline
+        const deadline = tournament.registrationDeadline || tournament.startDate;
+        if (new Date() > new Date(deadline)) {
+            return NextResponse.json(
+                { error: 'Registration deadline has passed' },
+                { status: 403 }
+            );
+        }
+
         // Check if tournament is full
         if (tournament._count.registrations >= tournament.maxPlayers) {
             return NextResponse.json(

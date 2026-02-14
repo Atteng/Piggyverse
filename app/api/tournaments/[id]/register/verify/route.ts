@@ -201,7 +201,7 @@ export async function POST(
                 where: { id: params.id },
                 data: {
                     registeredPlayers: { increment: 1 },
-                    prizePoolAmount: { increment: actualAmount },
+                    prizePoolAmount: (registration.tournament.prizePoolAmount || 0) + actualAmount,
                     // Set prize pool token if it's currently null
                     prizePoolToken: registration.tournament.prizePoolToken || token
                 }

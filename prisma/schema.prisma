@@ -170,18 +170,22 @@ model Tournament {
   registeredPlayers Int      @default(0)
   startDate         DateTime
   startTime         String
+  registrationDeadline DateTime?
 
   // Incentivization
   isIncentivized    Boolean @default(false)
   entryFeeAmount    Float?
   entryFeeToken     String?
   prizePoolAmount   Float?
+  prizePoolSeed     Float?  @default(0)
   prizePoolToken    String?
   prizeDistribution Json?
 
   rules     String?
   imageUrl  String?
   isPrivate Boolean @default(false)
+  discordLink String?
+  lobbyUrl    String?
 
   // Streaming
   isStreamed Boolean @default(false)

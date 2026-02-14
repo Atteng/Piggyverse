@@ -12,6 +12,14 @@ export async function GET(
     try {
         const session = await getServerSession(authOptions);
 
+        // Check if user is host before querying to customize inviteCodes inclusion
+        const baseTournament = await prisma.tournament.findUnique({
+            where: { id: params.id },
+            select: { hostId: true }
+        });
+
+        const isHost = baseTournament?.hostId === session?.user?.id;
+
         const tournament = await prisma.tournament.findUnique({
             where: { id: params.id },
             include: {
@@ -40,8 +48,12 @@ export async function GET(
                 },
                 ...(session?.user?.id ? {
                     inviteCodes: {
-                        where: { usedByUserId: session.user.id },
-                        select: { code: true }
+                        where: isHost ? {} : { usedByUserId: session.user.id },
+                        select: {
+                            code: true,
+                            isUsed: true,
+                            usedByUserId: true
+                        }
                     }
                 } : {}),
                 registrations: {
@@ -101,6 +113,36 @@ export async function GET(
             }
         }
         // -----------------------------------------------------------------------
+        // --- SELF-HEALING: Sync Prize Pool Amount ---
+        if (tournament.isIncentivized) {
+            const confirmedRegs = tournament.registrations.filter((r: any) => r.paymentStatus === 'COMPLETED');
+            const totalRevenue = confirmedRegs.reduce((acc: number, r: any) => acc + (r.expectedAmount || 0), 0);
+
+            // If seed is null (legacy), we assume seed = currentPool - revenue (min 0)
+            let currentSeed = (tournament as any).prizePoolSeed;
+            if (currentSeed === null || currentSeed === undefined) {
+                currentSeed = Math.max(0, (tournament.prizePoolAmount || 0) - totalRevenue);
+                // Save it for future loads
+                await prisma.tournament.update({
+                    where: { id: params.id },
+                    data: { prizePoolSeed: currentSeed }
+                });
+                (tournament as any).prizePoolSeed = currentSeed;
+            }
+
+            const livePool = currentSeed + totalRevenue;
+            const epsilon = 0.000001;
+
+            if (Math.abs((tournament.prizePoolAmount || 0) - livePool) > epsilon) {
+                await prisma.tournament.update({
+                    where: { id: params.id },
+                    data: { prizePoolAmount: livePool }
+                });
+                // Update local object for response
+                tournament.prizePoolAmount = livePool;
+            }
+        }
+        // -----------------------------------------------------------------------
 
         return NextResponse.json(tournament);
     } catch (error) {
@@ -146,11 +188,19 @@ export async function PATCH(
         const body = await request.json();
         const { status, ...updateData } = body;
 
+        // If prizePoolAmount is being updated, it acts as the new "seed" for hosts
+        if (updateData.prizePoolAmount !== undefined) {
+            (updateData as any).prizePoolSeed = updateData.prizePoolAmount;
+        }
+
         const updated = await prisma.tournament.update({
             where: { id: params.id },
             data: {
                 ...updateData,
-                ...(status && { status })
+                ...(status && { status }),
+                registrationDeadline: updateData.registrationDeadline ? new Date(updateData.registrationDeadline) : (updateData.registrationDeadline === null ? null : undefined),
+                discordLink: updateData.discordLink,
+                lobbyUrl: updateData.lobbyUrl
             },
             include: {
                 game: true,

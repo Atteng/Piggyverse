@@ -60,6 +60,32 @@ export const authOptions: NextAuthOptions = {
             }
             return session;
         },
+        async redirect({ url, baseUrl }) {
+            // Allows relative callback URLs
+            if (url.startsWith("/")) return `${baseUrl}${url}`;
+
+            // List of trusted root domains
+            const trustedDomains = [
+                'clubpiggy.com',
+                'pxxl.click',
+                'miasmatic-foggy-jakob.ngrok-free.dev', // ngrok for testing
+                'localhost:3000'
+            ];
+
+            try {
+                const targetUrl = new URL(url);
+                // Check if the host matches exactly or is a sub-domain of a trusted root
+                const isTrusted = trustedDomains.some(domain =>
+                    targetUrl.host === domain || targetUrl.host.endsWith(`.${domain}`)
+                );
+
+                if (isTrusted) return url;
+            } catch (e) {
+                // Invalid URL or error, fallback to default baseUrl
+            }
+
+            return baseUrl;
+        },
     },
     session: {
         strategy: "database",
