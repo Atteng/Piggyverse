@@ -36,6 +36,7 @@ import { useToast } from "@/hooks/use-toast";
 import { PaymentDepositModal } from "@/features/tournaments/components/payment-deposit-modal";
 import { MarketResolutionModal } from "./market-resolution-modal";
 import { TournamentEditModal } from "./tournament-edit-modal";
+import { SeedDepositModal } from "./seed-deposit-modal";
 
 interface TournamentDetailsViewProps {
     tournamentId: string;
@@ -54,6 +55,7 @@ export function TournamentDetailsView({ tournamentId }: TournamentDetailsViewPro
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isSeedModalOpen, setIsSeedModalOpen] = useState(false);
 
     // Fetch Tournament Details
     const { data: tournament, isLoading, error } = useQuery({
@@ -489,6 +491,15 @@ export function TournamentDetailsView({ tournamentId }: TournamentDetailsViewPro
                                     </Button>
                                 )}
 
+                                {isHost && (
+                                    <Button
+                                        onClick={() => setIsSeedModalOpen(true)}
+                                        className="bg-zinc-700 hover:bg-zinc-600 text-white font-black uppercase tracking-tighter h-12 rounded-xl border border-white/10"
+                                    >
+                                        Seed Prize Pool
+                                    </Button>
+                                )}
+
                                 <Button
                                     variant="outline"
                                     className="h-12 w-12 rounded-xl border-white/10 bg-black/40 hover:bg-white/10"
@@ -783,25 +794,20 @@ export function TournamentDetailsView({ tournamentId }: TournamentDetailsViewPro
             <TournamentEditModal
                 isOpen={isEditModalOpen}
                 onClose={() => setIsEditModalOpen(false)}
-                tournament={{
-                    id: tournament.id,
-                    name: tournament.name,
-                    description: tournament.description,
-                    rules: tournament.rules,
-                    discordLink: tournament.discordLink,
-                    streamLink: tournament.streamLink,
-                    imageUrl: tournament.imageUrl,
-                    lobbyUrl: tournament.lobbyUrl,
-                    isPrivate: tournament.isPrivate,
-                    startDate: tournament.startDate,
-                    startTime: tournament.startTime,
-                    maxPlayers: tournament.maxPlayers,
-                    entryFeeAmount: tournament.entryFeeAmount,
-                    entryFeeToken: tournament.entryFeeToken,
-                    prizePoolAmount: tournament.prizePoolAmount,
-                    prizePoolToken: tournament.prizePoolToken,
-                }}
+                tournament={tournament}
             />
+
+            {tournament && (
+                <SeedDepositModal
+                    isOpen={isSeedModalOpen}
+                    onClose={() => setIsSeedModalOpen(false)}
+                    tournamentId={tournamentId}
+                    tournamentName={tournament.name}
+                    onSuccess={() => {
+                        queryClient.invalidateQueries({ queryKey: ['tournament', tournamentId] });
+                    }}
+                />
+            )}
         </div >
     );
 }
