@@ -158,7 +158,7 @@ model Tournament {
   description String?
 
   gameId    String
-  game      Game     @relation(fields: [gameId], references: [id])
+  game      Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
   gameMode  String
   region    String?
   platforms String[]
