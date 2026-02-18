@@ -38,13 +38,13 @@ export default function HostTournamentPage() {
     }
 
     return (
-        <div className="w-full max-w-7xl mx-auto space-y-8 pb-20">
+        <div className="w-full max-w-7xl mx-auto px-2.5 md:px-6 py-6 md:py-8 space-y-6 md:space-y-8">
             {/* Header */}
-            <div className="text-center space-y-4 mb-12">
-                <h1 className="text-5xl font-black text-white font-mono tracking-tighter drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">
+            <div className="space-y-2">
+                <h1 className="text-3xl md:text-4xl font-black text-white font-mono tracking-tighter mb-2">
                     Host Tournament
                 </h1>
-                <p className="text-gray-200 max-w-2xl mx-auto text-lg">
+                <p className="text-white/70 font-mono text-xs md:text-sm max-w-md">
                     Create your own competitive event. Choose your game, set the rules, and decide if you want to play for fun or for real rewards.
                 </p>
             </div>

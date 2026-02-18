@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Trophy, Coins, Settings, Bell, ChevronRight, Swords, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 export type NotificationType = "tournament" | "earning" | "system" | "social";
 
@@ -54,61 +55,63 @@ export function NotificationItem({ notification }: NotificationItemProps) {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             className={cn(
-                "group relative overflow-hidden rounded-xl border border-white/5 p-3 transition-all duration-300",
+                "group relative overflow-hidden rounded-[1.25rem] border border-white/5 p-4 transition-all duration-300 w-full max-w-full",
                 notification.read
-                    ? "bg-black/20 hover:bg-black/40 hover:border-white/10"
-                    : "bg-white/5 hover:bg-white/10 border-white/10 hover:border-white/20"
+                    ? "bg-black/40 backdrop-blur-3xl hover:bg-black/60 hover:border-white/10"
+                    : "bg-black/60 border-white/20 hover:border-white/30 backdrop-blur-3xl"
             )}
         >
-            {/* Unread Indicator */}
+            {/* Unread Indicator - Pink Glow */}
             {!notification.read && (
-                <div className="absolute top-3 right-3 w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.5)]" />
+                <div className="absolute top-4 right-4 w-1.5 h-1.5 rounded-full bg-[var(--color-piggy-deep-pink)] shadow-[0_0_8px_var(--color-piggy-deep-pink)] animate-pulse" />
             )}
 
             <div className="flex items-start gap-3">
-                {/* Icon Box - More Compact */}
+                {/* Icon Box - Standardized Radius */}
                 <div className={cn(
-                    "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 backdrop-blur-sm transition-colors group-hover:bg-white/10",
+                    "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/5 bg-black/40 backdrop-blur-sm transition-colors group-hover:bg-white/5",
                 )}>
                     {getIcon()}
                 </div>
 
-                <div className="flex-1 min-w-0 pt-0.5">
-                    <div className="flex items-center justify-between gap-4 mb-0.5">
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-4 mb-2">
                         <h3 className={cn(
-                            "text-sm font-bold truncate pr-6",
-                            notification.read ? "text-gray-200" : "text-white"
+                            "text-sm font-black font-mono tracking-tighter leading-[0.7] truncate uppercase",
+                            notification.read ? "text-white/60" : "text-white"
                         )}>
                             {notification.title}
                         </h3>
-                        <span className="text-[10px] font-mono text-gray-500 whitespace-nowrap shrink-0">
+                        <span className="text-[9px] font-mono font-bold text-white/20 whitespace-nowrap shrink-0 uppercase tracking-widest">
                             {formatTime(notification.timestamp)}
                         </span>
                     </div>
 
-                    <p className="text-xs text-gray-400 leading-relaxed max-w-[95%] mb-2">
+                    <p className="text-[10px] text-white/40 font-medium leading-relaxed max-w-[95%] mb-2 break-words">
                         {notification.message}
                     </p>
 
-                    {/* Action Area - Compact */}
+                    {/* Action Area - Standardized */}
                     {(notification.actionLabel || notification.amount) && (
-                        <div className="flex items-center gap-2 mt-1.5">
+                        <div className="flex items-center gap-2 mt-2 flex-wrap">
                             {notification.actionLabel && (
-                                <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="h-7 px-2.5 bg-white/5 border-white/10 hover:bg-white/10 text-white hover:text-white text-[10px] font-bold rounded-md group/btn"
-                                >
-                                    {notification.actionLabel}
-                                    <ChevronRight className="w-2.5 h-2.5 ml-1 opacity-50 group-hover/btn:translate-x-0.5 transition-transform" />
-                                </Button>
+                                <Link href={notification.actionUrl || "#"}>
+                                    <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        className="h-7 px-3 bg-white/5 border border-white/10 hover:bg-white/10 text-white text-[10px] font-black rounded-full transition-all active:scale-95 flex items-center gap-1.5 uppercase tracking-widest"
+                                    >
+                                        {notification.actionLabel}
+                                        <ChevronRight className="w-2.5 h-2.5 opacity-50 transition-transform group-hover/btn:translate-x-0.5" />
+                                    </Button>
+                                </Link>
                             )}
 
                             {notification.amount && (
-                                <div className="flex items-center gap-1.5 px-2 py-0.5 bg-white/5 border border-white/10 rounded-md">
-                                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Amount</span>
+                                <div className="flex items-center gap-1.5 px-3 py-1 bg-black/20 border border-white/5 rounded-full">
+                                    <span className="text-[9px] text-white/20 font-black uppercase tracking-widest">Prize</span>
                                     <div className="w-px h-2.5 bg-white/10" />
-                                    <span className="text-white font-mono text-[10px] font-bold">
+                                    <span className="text-[var(--color-piggy-deep-pink)] font-mono text-[10px] font-black">
                                         {notification.amount.toLocaleString()}
                                     </span>
                                 </div>

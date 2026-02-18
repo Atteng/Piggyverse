@@ -28,7 +28,7 @@ export default function NotificationsPage() {
 
     if (status === "loading" || (status === "authenticated" && isLoading)) {
         return (
-            <div className="container max-w-4xl mx-auto p-4 lg:p-8 flex justify-center py-20">
+            <div className="w-full max-w-7xl mx-auto px-2.5 md:px-6 py-20 flex justify-center">
                 <Loader2 className="w-8 h-8 animate-spin text-[var(--color-piggy-deep-pink)]" />
             </div>
         );
@@ -36,35 +36,35 @@ export default function NotificationsPage() {
 
     if (status === "unauthenticated") {
         return (
-            <div className="container max-w-4xl mx-auto p-4 lg:p-8 text-center py-20">
-                <h2 className="text-2xl font-bold text-white mb-2">Please Sign In</h2>
-                <p className="text-gray-400">You need to be logged in to view your notifications.</p>
+            <div className="w-full max-w-7xl mx-auto px-2.5 md:px-6 py-20 text-center">
+                <h2 className="text-2xl font-black text-white font-mono uppercase tracking-tighter mb-2">Please Sign In</h2>
+                <p className="text-white font-mono text-xs md:text-sm opacity-70">You need to be logged in to view your notifications.</p>
             </div>
         );
     }
 
     return (
-        <div className="container max-w-4xl mx-auto p-4 lg:p-8 space-y-8">
+        <div className="w-full max-w-7xl mx-auto px-2.5 md:px-6 py-6 md:py-8 space-y-6 md:space-y-8">
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-white tracking-tight">
+                    <h1 className="text-3xl md:text-4xl font-black text-white font-mono tracking-tighter mb-2">
                         Notifications
                     </h1>
-                    <p className="text-white font-medium mt-1">
-                        Stay updated on your earnings, tournaments, and rank.
+                    <p className="text-white font-mono text-xs md:text-sm max-w-md opacity-70">
+                        Stay updated on your earnings, tournaments, and rank progress.
                     </p>
                 </div>
                 <Button
                     onClick={() => markAllAsReadMutation.mutate()}
                     disabled={markAllAsReadMutation.isPending}
-                    variant="outline"
-                    className="bg-white/5 border-white/10 hover:bg-white/10 text-white gap-2"
+                    variant="ghost"
+                    className="bg-black/60 backdrop-blur-md border border-white/10 rounded-full h-10 px-6 text-white text-xs font-black flex items-center gap-2 shadow-lg hover:bg-black/80 transition-all active:scale-95 w-full sm:w-auto justify-center"
                 >
                     {markAllAsReadMutation.isPending ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
-                        <CheckCheck className="w-4 h-4" />
+                        <CheckCheck className="w-4 h-4 text-[var(--color-piggy-deep-pink)]" />
                     )}
                     Mark all as read
                 </Button>

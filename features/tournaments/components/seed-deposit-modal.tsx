@@ -25,7 +25,15 @@ export function SeedDepositModal({
     tournamentName,
     onSuccess
 }: SeedDepositModalProps) {
-    const { toast } = useToast();
+    // Safely get toast with fallback
+    let toast: any;
+    try {
+        const toastHook = useToast();
+        toast = toastHook?.toast || (() => { });
+    } catch (e) {
+        console.error("SeedDepositModal useToast error:", e);
+        toast = () => { };
+    }
     const [loading, setLoading] = useState(false);
     const [step, setStep] = useState<'input' | 'payment' | 'success'>('input');
 

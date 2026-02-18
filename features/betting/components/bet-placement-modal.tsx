@@ -5,7 +5,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Coins, TrendingUp, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Coins, TrendingUp, AlertCircle, CheckCircle2, Share2 } from "lucide-react";
+import { DownloadBetSlipButton } from "./DownloadBetSlipButton";
 import { placeBet } from "@/lib/api/betting";
 import { useToast } from "@/hooks/use-toast";
 import { useBettingOdds } from "@/hooks/use-betting-odds";
@@ -37,6 +38,7 @@ export function BetPlacementModal({
 }: BetPlacementModalProps) {
     const [amount, setAmount] = useState<string>("");
     const [step, setStep] = useState<"input" | "confirm" | "success">("input");
+    const [placedBetData, setPlacedBetData] = useState<any>(null);
     const { toast } = useToast();
     const queryClient = useQueryClient();
 
@@ -57,8 +59,8 @@ export function BetPlacementModal({
             amount: betAmount,
             token
         }),
-        onSuccess: () => {
-            // ... rest of the function
+        onSuccess: (data) => {
+            setPlacedBetData(data);
             setStep("success");
             queryClient.invalidateQueries({ queryKey: ['betting', 'market', marketId] });
             queryClient.invalidateQueries({ queryKey: ['betting', 'bets'] });
@@ -178,7 +180,38 @@ export function BetPlacementModal({
                         </div>
                         <div>
                             <h3 className="text-2xl font-bold text-white mb-2">Bet Placed!</h3>
-                            <p className="text-gray-400">Good luck! You can track this bet in your profile.</p>
+                            <p className="text-gray-400 mb-6">Good luck! You can track this bet in your profile.</p>
+
+                            {placedBetData && (
+                                <div className="space-y-3 px-8">
+                                    <DownloadBetSlipButton
+                                        betData={{
+                                            id: placedBetData.id,
+                                            bookingCode: placedBetData.bookingCode || "PENDING",
+                                            placedAt: new Date().toLocaleDateString("en-GB", {
+                                                day: "2-digit",
+                                                month: "2-digit",
+                                                year: "numeric",
+                                                hour: "2-digit",
+                                                minute: "2-digit"
+                                            }),
+                                            items: [{
+                                                selection: outcomeName,
+                                                gameTitle: tournamentName,
+                                                participants: "Tournament Bet", // Simplification
+                                                question: `Bet on ${outcomeName}`,
+                                                amount: parseFloat(amount),
+                                                token: token,
+                                                odds: currentOdds,
+                                                payout: potentialPayout
+                                            }]
+                                        }}
+                                    />
+                                    <p className="text-[10px] text-gray-500">
+                                        Save or share your betting slip on social media.
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}

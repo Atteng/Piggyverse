@@ -27,7 +27,7 @@ export function PowerLevels() {
         return (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {[1, 2, 3].map((i) => (
-                    <div key={i} className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-6 flex items-center justify-center h-32">
+                    <div key={i} className="bg-black/60 backdrop-blur-3xl border border-white/10 rounded-2xl p-6 flex items-center justify-center h-32">
                         <Loader2 className="w-6 h-6 text-white/50 animate-spin" />
                     </div>
                 ))}
@@ -72,7 +72,7 @@ export function PowerLevels() {
             {powerLevels.map((level) => {
                 const Icon = level.icon;
                 return (
-                    <div key={level.name} className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-6">
+                    <div key={level.name} className="bg-black/60 backdrop-blur-3xl border border-white/10 rounded-2xl p-6">
                         <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 rounded-lg bg-white/5 border border-white/10">

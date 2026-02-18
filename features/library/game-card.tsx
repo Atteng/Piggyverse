@@ -30,21 +30,62 @@ export function GameCard({ game }: GameCardProps) {
                 </div>
             )}
             <motion.div
-                whileHover={{ y: -8, scale: 1.02 }}
-                className="group relative bg-black/40 border border-white/10 rounded-3xl overflow-hidden hover:border-[var(--color-piggy-deep-pink)]/50 transition-all duration-300 shadow-lg hover:shadow-[var(--color-piggy-deep-pink)]/20 h-full flex flex-col"
+                whileHover={{ y: -4, scale: 1.01 }}
+                className="group relative bg-black/60 backdrop-blur-3xl border border-white/5 rounded-[1.5rem] overflow-hidden hover:bg-white hover:border-black/10 transition-all duration-300 shadow-2xl flex flex-col md:flex-row h-auto md:h-[200px]"
             >
-                {/* Image Container */}
-                <div className="relative h-40 w-full overflow-hidden shrink-0">
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent z-10" />
-                    <img
-                        src={game.thumbnail}
-                        alt={game.title}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    />
+                {/* Image Section - 1:1 on Desktop, Aspect-Video on Mobile */}
+                <div className="relative w-full md:w-[200px] aspect-video md:aspect-square overflow-hidden shrink-0 p-3">
+                    <div className="relative w-full h-full rounded-2xl overflow-hidden shadow-2xl border border-white/10">
+                        <img
+                            src={game.thumbnail}
+                            alt={game.title}
+                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                        />
+                        {/* Status Badges Overlay */}
+                        <div className="absolute top-2 left-2 flex flex-col gap-1 z-20">
+                            {game.tournamentStatus && (
+                                <div className="px-2.5 py-1 rounded-full bg-black/80 backdrop-blur-md border border-white/10 text-[7px] font-black text-white uppercase tracking-widest shadow-xl flex items-center gap-1.5">
+                                    <div className="w-1 h-1 rounded-full bg-[var(--color-piggy-deep-pink)] animate-pulse" />
+                                    Tournament
+                                </div>
+                            )}
+                            {game.bettingAllowed && (
+                                <div className="px-2.5 py-1 rounded-full bg-black/80 backdrop-blur-md border border-white/10 text-[7px] font-black text-white uppercase tracking-widest shadow-xl flex items-center gap-1.5">
+                                    <div className="w-1 h-1 rounded-full bg-gray-400" />
+                                    Betting
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
 
-                    {/* Status Tags Stack - Compact Card, Normal Tags */}
-                    <div className="absolute top-3 right-3 z-20 flex flex-col items-end gap-1.5">
-                        {/* Owner Actions */}
+                {/* Content Section */}
+                <div className="flex-1 p-5 md:pl-2 flex flex-col justify-between relative overflow-hidden">
+                    <div className="min-w-0">
+                        {/* Category & Uploader Info */}
+                        <div className="flex items-center gap-2 mb-1">
+                            <span className="text-[9px] font-black text-[var(--color-piggy-deep-pink)] group-hover:text-black transition-colors uppercase tracking-widest truncate">
+                                {game.categories[0] || "Puzzle"}
+                            </span>
+                            <span className="text-white/20 group-hover:text-black/20">•</span>
+                            <span className="text-[9px] font-black text-white/40 group-hover:text-black/40 transition-colors uppercase tracking-widest truncate">
+                                {game.uploaderName || "Monster 18"}
+                            </span>
+                        </div>
+
+                        {/* Title */}
+                        <h3 className="text-lg font-black text-white group-hover:text-black font-mono leading-none mb-2 tracking-tighter uppercase transition-colors truncate">
+                            {game.title}
+                        </h3>
+
+                        {/* Description */}
+                        <p className="text-[12px] font-normal text-white/70 group-hover:text-black/70 transition-colors leading-snug line-clamp-4">
+                            {game.description || "Built to be played by friends, enemies or even strangers needing a good time. Supports both single and multiplayer modes"}
+                        </p>
+                    </div>
+
+                    {/* Bottom Actions */}
+                    <div className="flex items-center justify-end gap-3 pb-1">
                         {isOwner && (
                             <Button
                                 size="icon"
@@ -53,87 +94,21 @@ export function GameCard({ game }: GameCardProps) {
                                     e.stopPropagation();
                                     setIsEditModalOpen(true);
                                 }}
-                                className="h-8 w-8 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white hover:bg-[var(--color-piggy-deep-pink)] hover:border-transparent transition-all shadow-xl mb-1"
+                                className="h-9 w-9 rounded-full bg-white/5 hover:bg-white/10 border border-white/5 text-white/40 hover:text-white transition-all shadow-xl"
                             >
                                 <Settings className="h-4 w-4" />
                             </Button>
                         )}
-
-                        {/* Tournament Status */}
-                        {game.tournamentStatus && (
-                            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-white/20 bg-black/60 backdrop-blur-md shadow-lg text-white">
-                                {game.tournamentStatus === "Ongoing" ? (
-                                    <>
-                                        <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-piggy-super-green)] animate-pulse" />
-                                        <span className="text-[10px] font-bold tracking-wider uppercase">Ongoing</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <Clock className="h-3 w-3" />
-                                        <span className="text-[10px] font-bold tracking-wider uppercase">{game.tournamentStatus}</span>
-                                    </>
-                                )}
-                            </div>
-                        )}
-
-                        {/* Prize Pool */}
-                        {game.prizePool && (
-                            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-white/20 bg-black/60 backdrop-blur-md shadow-lg text-white">
-                                <Trophy className="h-3 w-3" />
-                                <span className="text-[10px] font-bold tracking-wider uppercase">
-                                    {game.prizePool}
-                                </span>
-                            </div>
-                        )}
-
-                        {/* Betting Allowed */}
-                        {game.bettingAllowed && (
-                            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-white/20 bg-black/60 backdrop-blur-md shadow-lg text-white">
-                                <Coins className="h-3 w-3" />
-                                <span className="text-[10px] font-bold tracking-wider uppercase">
-                                    Betting
-                                </span>
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* Content */}
-                <div className="p-3 relative z-20 flex flex-col flex-1">
-                    <div className="flex justify-between items-start mb-1">
-                        <div>
-                            <h3 className="text-lg font-bold text-white font-mono leading-tight mb-1 group-hover:text-[var(--color-piggy-deep-pink)] transition-colors">
-                                {game.title}
-                            </h3>
-                            <div className="flex flex-wrap gap-1.5">
-                                {game.categories.map((cat) => (
-                                    <span key={cat} className="text-[9px] text-gray-400 font-medium tracking-wide uppercase bg-white/5 px-1.5 py-0.5 rounded border border-white/5">
-                                        {cat}
-                                    </span>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="mt-auto pt-3 flex items-center justify-between">
-                        <div className="flex items-center gap-1 text-gray-400">
-                            <Users className="h-3 w-3" />
-                            <span className="text-[10px] font-mono">{game.playerCount}</span>
-                        </div>
-
                         <Button
                             onClick={async () => {
                                 if (!game.gameUrl) return;
-
-                                // Track play (fire and forget)
                                 fetch(`/api/games/${game.id}/play`, { method: "POST" }).catch(console.error);
-
                                 window.open(game.gameUrl, '_blank');
                             }}
                             disabled={!game.gameUrl}
-                            className="h-7 px-3 rounded-full bg-white/10 hover:bg-[var(--color-piggy-deep-pink)] text-white text-[10px] font-bold transition-all hover:scale-105 active:scale-95 group/btn border border-white/5 hover:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="bg-[var(--color-piggy-deep-pink)] hover:bg-[var(--color-piggy-deep-pink)]/90 text-white rounded-full font-black px-6 h-9 text-xs shadow-[0_0_20px_rgba(255,47,122,0.3)] transition-all hover:scale-105 active:scale-95 flex items-center gap-2"
                         >
-                            <Play className="h-2.5 w-2.5 mr-1 fill-current" />
+                            <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
                             Play
                         </Button>
                     </div>

@@ -25,6 +25,7 @@ export const BLOCKCHAIN_CONFIG = {
         PIGGY_TOKEN: process.env.NEXT_PUBLIC_CONTRACT_PIGGY_TOKEN!,
         UP_TOKEN: process.env.NEXT_PUBLIC_CONTRACT_UP_TOKEN!,
         USDC_TOKEN: process.env.NEXT_PUBLIC_CONTRACT_USDC!,
+        TUSDC_TOKEN: process.env.NEXT_PUBLIC_CONTRACT_TUSDC!,
         WATCH_TO_EARN: process.env.NEXT_PUBLIC_CONTRACT_WATCH_TO_EARN!,
     },
 

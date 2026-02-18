@@ -21,67 +21,45 @@ export function Sidebar() {
     return (
         <>
             {/* Desktop Sidebar - Fixed Left, Icon Only */}
-            <aside className="hidden md:flex flex-col w-[100px] h-screen fixed left-0 top-0 border-r border-white/5 bg-black/40 backdrop-blur-xl z-40 items-center py-8">
-
-                {/* Logo - Icon Only */}
-                <div className="mb-12 relative w-12 h-12">
-                    <Link href="/">
-                        <img src="/logo.png" alt="Logo" className="w-full h-full object-contain drop-shadow-[0_0_10px_rgba(255,47,122,0.5)]" />
+            <aside className="hidden md:flex flex-col w-[120px] h-screen fixed left-0 top-0 z-40 items-center py-8">
+                {/* Main Dark Container */}
+                <div className="flex flex-col items-center py-8 bg-black/60 backdrop-blur-2xl border border-white/5 w-20 h-fit rounded-[2rem] mt-8 shadow-2xl pb-10">
+                    {/* Logo */}
+                    <Link href="/" className="mb-10 group transition-transform hover:scale-110 active:scale-95">
+                        <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.2)]">
+                            <img src="/logo.png" alt="Logo" className="w-8 h-8 object-contain" />
+                        </div>
                     </Link>
+
+                    {/* Navigation */}
+                    <nav className="flex flex-col gap-5 items-center w-full px-2">
+                        {navItems.map((item) => {
+                            const isActive = pathname === item.href;
+                            const Icon = item.icon;
+
+                            return (
+                                <Link
+                                    key={item.href}
+                                    href={item.href}
+                                    className={cn(
+                                        "relative flex items-center justify-center w-12 h-12 rounded-xl transition-all duration-300 group",
+                                        isActive
+                                            ? "bg-[var(--color-piggy-deep-pink)] text-white shadow-[0_0_20px_rgba(255,47,122,0.5)] scale-110"
+                                            : "text-gray-400 hover:text-white hover:bg-white/5"
+                                    )}
+                                >
+                                    <Icon className={cn("h-6 w-6", isActive && "fill-current")} strokeWidth={isActive ? 2.5 : 2} />
+
+                                    {/* Tooltip on hover */}
+                                    <span className="absolute left-16 bg-black/90 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300 whitespace-nowrap pointer-events-none border border-white/10 z-50 translate-x-[-10px] group-hover:translate-x-0 tracking-wide capitalize">
+                                        {item.name}
+                                    </span>
+                                </Link>
+                            );
+                        })}
+                    </nav>
                 </div>
-
-                {/* Navigation */}
-                <nav className="flex flex-col gap-6 w-full px-4 items-center">
-                    {navItems.map((item) => {
-                        const isActive = pathname === item.href;
-                        const Icon = item.icon;
-
-                        return (
-                            <Link
-                                key={item.href}
-                                href={item.href}
-                                className={cn(
-                                    "relative flex items-center justify-center w-14 h-14 rounded-2xl transition-all duration-300 group",
-                                    isActive
-                                        ? "bg-[var(--color-piggy-deep-pink)] text-white shadow-[0_0_15px_rgba(255,47,122,0.6)] scale-110"
-                                        : "bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white"
-                                )}
-                            >
-                                <Icon className={cn("h-6 w-6", isActive && "fill-current")} strokeWidth={isActive ? 2.5 : 2} />
-
-                                {/* Tooltip on hover */}
-                                <span className="absolute left-16 bg-black/80 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none border border-white/10 z-50">
-                                    {item.name}
-                                </span>
-
-                                {isActive && (
-                                    <div className="absolute -right-[22px] top-1/2 -translate-y-1/2 w-1 h-8 bg-[var(--color-piggy-deep-pink)] rounded-l-full hidden" />
-                                )}
-                            </Link>
-                        );
-                    })}
-                </nav>
             </aside>
-
-            {/* Mobile Bottom Navigation */}
-            <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-black/90 backdrop-blur-xl border-t border-white/10 z-50 flex items-center justify-around px-4 pb-safe">
-                {navItems.slice(0, 5).map((item) => {
-                    const isActive = pathname === item.href;
-                    const Icon = item.icon;
-                    return (
-                        <Link
-                            key={item.href}
-                            href={item.href}
-                            className={cn(
-                                "flex flex-col items-center justify-center p-2 rounded-lg transition-colors",
-                                isActive ? "text-[var(--color-piggy-deep-pink)]" : "text-gray-500"
-                            )}
-                        >
-                            <Icon className={cn("h-6 w-6", isActive && "fill-current")} />
-                        </Link>
-                    );
-                })}
-            </nav>
         </>
     );
 }

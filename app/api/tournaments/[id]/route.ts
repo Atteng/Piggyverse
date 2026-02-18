@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { recordTournamentWin } from '@/lib/stats';
 
 // GET /api/tournaments/[id] - Get tournament details
 export async function GET(
@@ -168,7 +169,7 @@ export async function PATCH(
 
         const tournament = await prisma.tournament.findUnique({
             where: { id: params.id },
-            select: { hostId: true }
+            select: { hostId: true, winnerId: true }
         });
 
         if (!tournament) {
@@ -213,6 +214,14 @@ export async function PATCH(
                 }
             }
         });
+
+        // If winner is declared, update stats
+        if (updateData.winnerId && updateData.winnerId !== tournament.winnerId) {
+            // Run asynchronously to not block response
+            recordTournamentWin(updateData.winnerId).catch(err =>
+                console.error('Failed to update winner stats:', err)
+            );
+        }
 
         return NextResponse.json(updated);
     } catch (error) {

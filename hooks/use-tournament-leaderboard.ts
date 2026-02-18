@@ -14,7 +14,7 @@ interface LeaderboardEntry {
 }
 
 export function useTournamentLeaderboard(tournamentId: string) {
-    const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
+    const [leaderboardData, setLeaderboardData] = useState<LeaderboardEntry[]>([]);
     const [isConnected, setIsConnected] = useState(false);
 
     useEffect(() => {
@@ -22,42 +22,58 @@ export function useTournamentLeaderboard(tournamentId: string) {
 
         // Fetch initial leaderboard
         const fetchLeaderboard = async () => {
-            const response = await fetch(`/api/leaderboards?tournamentId=${tournamentId}`);
-            if (response.ok) {
-                const data = await response.json();
-                setEntries(data.entries || []);
+            try {
+                const response = await fetch(`/api/leaderboard?tournamentId=${tournamentId}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data && Array.isArray(data.entries)) {
+                        setLeaderboardData(data.entries);
+                    } else {
+                        // Safely handle missing entries
+                        setLeaderboardData([]);
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to fetch leaderboard", error);
+                setLeaderboardData([]);
             }
         };
 
         fetchLeaderboard();
 
         // Subscribe to real-time updates
-        channel = supabaseClient
-            .channel(`tournament:${tournamentId}:leaderboard`)
-            .on(
-                'postgres_changes',
-                {
-                    event: '*',
-                    schema: 'public',
-                    table: 'leaderboard_entries',
-                    filter: `tournament_id=eq.${tournamentId}`
-                },
-                () => {
-                    // Refetch leaderboard on any change
-                    fetchLeaderboard();
-                }
-            )
-            .subscribe((status) => {
-                setIsConnected(status === 'SUBSCRIBED');
-            });
+        if (supabaseClient) {
+            try {
+                channel = supabaseClient
+                    .channel(`tournament:${tournamentId}:leaderboard`)
+                    .on(
+                        'postgres_changes',
+                        {
+                            event: '*',
+                            schema: 'public',
+                            table: 'leaderboard_entries',
+                            filter: `tournament_id=eq.${tournamentId}`
+                        },
+                        () => {
+                            // Refetch leaderboard on any change
+                            fetchLeaderboard();
+                        }
+                    )
+                    .subscribe((status) => {
+                        setIsConnected(status === 'SUBSCRIBED');
+                    });
+            } catch (err) {
+                console.error("Supabase subscription error:", err);
+            }
+        }
 
         return () => {
-            channel.unsubscribe();
+            if (channel) channel.unsubscribe();
         };
     }, [tournamentId]);
 
     return {
-        entries,
+        entries: leaderboardData,
         isConnected
     };
 }

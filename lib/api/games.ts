@@ -15,6 +15,7 @@ export interface GameFrontend {
     hasOracleIntegration?: boolean;
     createdById?: string;
     isListed?: boolean;
+    uploaderName?: string;
 }
 
 interface APIGame {
@@ -51,14 +52,16 @@ export interface GetGamesOptions {
     page?: number;
     search?: string;
     limit?: number;
+    sort?: 'popular' | 'newest';
 }
 
 export async function getGames(options: GetGamesOptions = {}) {
-    const { page = 1, search = "", limit = 12 } = options;
+    const { page = 1, search = "", limit = 12, sort = "popular" } = options;
 
     const params = new URLSearchParams({
         page: page.toString(),
         limit: limit.toString(),
+        sort,
     });
 
     if (search) {
@@ -83,13 +86,14 @@ export async function getGames(options: GetGamesOptions = {}) {
         categories: game.categories,
         platforms: game.platforms,
         playerCount: game.playerCount.toLocaleString(),
-        tournamentStatus: null, // Placeholder
-        prizePool: null, // Placeholder
-        bettingAllowed: true, // Placeholder
+        tournamentStatus: (game as any)._count?.tournaments > 0 ? "ACTIVE" : null,
+        prizePool: null,
+        bettingAllowed: game.hasOracleIntegration || false,
         gameUrl: game.gameUrl || null,
         hasOracleIntegration: game.hasOracleIntegration || false,
         createdById: game.createdBy?.id || game.createdById,
         isListed: game.isListed,
+        uploaderName: game.createdBy?.username || "Admin",
     }));
 
     return {

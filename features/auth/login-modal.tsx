@@ -27,22 +27,25 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-md bg-black/90 border-white/10 text-white backdrop-blur-xl">
-                <DialogHeader>
-                    <DialogTitle className="text-2xl font-black text-center font-mono">
+            <DialogContent
+                showCloseButton={false}
+                className="w-[calc(100%-4rem)] max-w-[340px] sm:max-w-md bg-black/60 border-white/5 text-white backdrop-blur-3xl rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8"
+            >
+                <DialogHeader className="space-y-1 mt-4">
+                    <DialogTitle className="text-2xl md:text-3xl font-black text-center font-mono tracking-tighter leading-[0.8] mb-1">
                         Welcome to <span className="text-[var(--color-piggy-deep-pink)]">PiggyVerse</span>
                     </DialogTitle>
-                    <DialogDescription className="text-center text-gray-400 font-mono">
+                    <DialogDescription className="text-center text-white/40 font-medium text-sm leading-tight">
                         Connect your account to compete, bet, and earn.
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="flex flex-col gap-4 py-4">
+                <div className="flex flex-col gap-3 py-6">
                     <Button
                         variant="outline"
                         onClick={() => handleLogin('twitter')}
                         disabled={!!isLoading}
-                        className="w-full h-12 bg-[#1DA1F2]/10 border-[#1DA1F2]/20 hover:bg-[#1DA1F2]/20 text-white font-bold"
+                        className="w-full h-12 bg-[#1DA1F2]/5 border-white/5 hover:bg-[#1DA1F2]/10 text-white font-bold rounded-full transition-all"
                     >
                         {isLoading === 'twitter' ? (
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -58,7 +61,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                         variant="outline"
                         onClick={() => handleLogin('discord')}
                         disabled={!!isLoading}
-                        className="w-full h-12 bg-[#5865F2]/10 border-[#5865F2]/20 hover:bg-[#5865F2]/20 text-white font-bold"
+                        className="w-full h-12 bg-[#5865F2]/5 border-white/5 hover:bg-[#5865F2]/10 text-white font-bold rounded-full transition-all"
                     >
                         {isLoading === 'discord' ? (
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -71,7 +74,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                     </Button>
                 </div>
 
-                <div className="text-center text-xs text-gray-500 font-mono px-4">
+                <div className="text-center text-[10px] text-white/20 font-mono px-4 leading-tight">
                     By connecting, you agree to our Terms of Service and Privacy Policy.
                 </div>
             </DialogContent>

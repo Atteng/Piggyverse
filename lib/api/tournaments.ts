@@ -174,3 +174,45 @@ export async function resolveMarket(marketId: string, outcomeId: string) {
 
     return res.json();
 }
+
+export async function updateMarket(marketId: string, data: any) {
+    const res = await fetch(`/api/betting/markets/${marketId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+    });
+
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to update market");
+    }
+
+    return res.json();
+}
+
+export async function createMarket(data: any) {
+    const res = await fetch(`/api/betting/markets`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+    });
+
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to create market");
+    }
+
+    return res.json();
+}
+export async function syncTournamentResults(id: string) {
+    const res = await fetch(`/api/tournaments/${id}/verify`, {
+        method: "POST"
+    });
+
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to sync results");
+    }
+
+    return res.json();
+}

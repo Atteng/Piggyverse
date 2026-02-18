@@ -24,7 +24,15 @@ export function PaymentDepositModal({
     entryFeeToken,
     onSuccess
 }: PaymentDepositModalProps) {
-    const { toast } = useToast();
+    // Safely get toast with fallback
+    let toast: any;
+    try {
+        const toastHook = useToast();
+        toast = toastHook?.toast || (() => { });
+    } catch (e) {
+        console.error("PaymentDepositModal useToast error:", e);
+        toast = () => { };
+    }
     const [step, setStep] = useState<'intent' | 'payment' | 'verifying' | 'success'>('intent');
     const [loading, setLoading] = useState(false);
 

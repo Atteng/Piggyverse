@@ -83,7 +83,7 @@ export function WatchToEarnTracker({ streamId }: WatchToEarnTrackerProps) {
     };
 
     return (
-        <div className="bg-black/90 backdrop-blur-xl border border-white/20 rounded-xl shadow-2xl overflow-hidden">
+        <div className="bg-black/60 backdrop-blur-3xl border border-white/20 rounded-xl shadow-2xl overflow-hidden">
             {/* Header */}
             <div className="bg-black/40 px-3 py-1.5 border-b border-white/10">
                 <div className="flex items-center gap-2">

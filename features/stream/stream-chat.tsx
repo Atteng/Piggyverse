@@ -58,7 +58,7 @@ export function StreamChat({ streamId }: StreamChatProps) {
     };
 
     return (
-        <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl h-full flex flex-col overflow-hidden">
+        <div className="bg-black/60 backdrop-blur-3xl border border-white/10 rounded-2xl h-full flex flex-col overflow-hidden">
             {/* Chat Header */}
             <div className="p-4 border-b border-white/10 flex-shrink-0">
                 <div className="flex items-center justify-between">

@@ -154,6 +154,10 @@ export async function POST(request: NextRequest) {
             }
         });
 
+        // Update stats via centralized utility
+        const { incrementMarketsCreated } = await import('@/lib/stats');
+        await incrementMarketsCreated(tournament.hostId, 1);
+
         return NextResponse.json(market, { status: 201 });
     } catch (error) {
         console.error('Error creating betting market:', error);

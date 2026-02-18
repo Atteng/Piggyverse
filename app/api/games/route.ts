@@ -9,10 +9,11 @@ export const runtime = 'nodejs'; // Ensure node runtime for larger body limits i
 export async function GET(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url);
+        const sort = searchParams.get("sort") || "popular"; // Default to popular
         const search = searchParams.get("search");
         const category = searchParams.get("category");
         const page = parseInt(searchParams.get("page") || "1");
-        const limit = parseInt(searchParams.get("limit") || "12");
+        const limit = parseInt(searchParams.get("limit") || "10");
 
         const where: any = {
             isListed: true,
@@ -31,6 +32,14 @@ export async function GET(request: NextRequest) {
             };
         }
 
+        // Determine sort order
+        let orderBy: any = { playerCount: "desc" };
+        if (sort === "newest") {
+            orderBy = { createdAt: "desc" };
+        } else if (sort === "popular") {
+            orderBy = { playerCount: "desc" };
+        }
+
         const [games, total] = await Promise.all([
             prisma.game.findMany({
                 where,
@@ -44,10 +53,19 @@ export async function GET(request: NextRequest) {
                             avatarUrl: true,
                         },
                     },
+                    _count: {
+                        select: {
+                            tournaments: {
+                                where: {
+                                    status: {
+                                        in: ["ACTIVE", "PENDING"]
+                                    }
+                                }
+                            }
+                        }
+                    }
                 },
-                orderBy: {
-                    playerCount: "desc",
-                },
+                orderBy,
             }),
             prisma.game.count({ where }),
         ]);

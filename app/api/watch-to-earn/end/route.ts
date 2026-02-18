@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { incrementHoursWatched } from '@/lib/stats';
 
 // POST /api/watch-to-earn/end - End a watch session and calculate rewards
 export async function POST(request: NextRequest) {
@@ -88,57 +89,15 @@ export async function POST(request: NextRequest) {
                 }
             });
 
-            // Update User Stats
-            await prisma.userStats.upsert({
+            // Update User Stats using centralized utility
+            const durationHours = durationMinutes / 60;
+            await incrementHoursWatched(user.id, durationHours);
+
+            // Still update tokens earned (not handled by incrementHoursWatched yet)
+            await prisma.userStats.update({
                 where: { userId: user.id },
-                update: {
-                    totalHoursPlayed: { increment: Math.floor(durationMinutes / 60) },
-                    tokensEarned: { increment: pointsEarned },
-                    lastActivity: new Date()
-                },
-                create: {
-                    userId: user.id,
-                    totalHoursPlayed: Math.floor(durationMinutes / 60),
-                    tokensEarned: pointsEarned,
-                    lastActivity: new Date()
-                }
+                data: { tokensEarned: { increment: pointsEarned } }
             });
-
-            // Update User Scores
-            await prisma.user.update({
-                where: { id: user.id },
-                data: {
-                    effortScore: { increment: pointsEarned },
-                    activityScore: { increment: Math.ceil(pointsEarned / 5) } // 20% activity score
-                }
-            });
-
-            // Update Global Leaderboard
-            const lbEntry = await prisma.leaderboardEntry.findFirst({
-                where: { userId: user.id, gameId: null }
-            });
-
-            if (lbEntry) {
-                await prisma.leaderboardEntry.update({
-                    where: { id: lbEntry.id },
-                    data: {
-                        totalScore: { increment: pointsEarned },
-                        timePlayedHours: { increment: Math.floor(durationMinutes / 60) }
-                    }
-                });
-            } else {
-                await prisma.leaderboardEntry.create({
-                    data: {
-                        userId: user.id,
-                        gameId: null,
-                        rank: 999,
-                        totalScore: pointsEarned,
-                        tournamentsWon: 0,
-                        timePlayedHours: Math.floor(durationMinutes / 60),
-                        matchWins: 0
-                    }
-                });
-            }
         }
 
         return NextResponse.json({

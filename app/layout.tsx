@@ -40,23 +40,21 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
-      <body className={`${geistSans.variable} ${jetBrainsMono.variable} antialiased bg-background text-foreground font-mono`}>
+    <html lang="en" className="dark overflow-x-hidden">
+      <body className={`${geistSans.variable} ${jetBrainsMono.variable} antialiased bg-background text-foreground font-mono overflow-x-hidden w-full`}>
         <Providers>
           <UserActivityProvider>
-            <MobileBlocker />
             {/* Global Background Image Layer */}
             <div className="fixed inset-0 z-[-1]">
               <div className="absolute inset-0 bg-[url('/images/bg-2.jpg')] bg-cover bg-center bg-no-repeat" />
             </div>
 
-            <div className="flex w-full">
+            <div className="flex w-full overflow-x-hidden">
               <Sidebar />
               <div className="flex-1 transition-all duration-300 ml-0 md:ml-[100px]">
                 <Header />
                 <main
-                  className="min-h-[calc(100vh-80px)] p-3 md:p-4 lg:p-6 relative"
-                  style={{ maskImage: "linear-gradient(to bottom, transparent, black 120px)" }}
+                  className="min-h-[calc(100vh-80px)] p-2 md:p-4 lg:p-6 relative"
                 >
                   {children}
                 </main>

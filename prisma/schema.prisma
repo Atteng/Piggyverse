@@ -37,12 +37,16 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Rank update optimization
+  needsRankUpdate Boolean @default(false)
+
   // Auth Relations
   accounts Account[]
   sessions Session[]
 
   // App Relations
   hostedTournaments  Tournament[]
+  wonTournaments     Tournament[]           @relation("TournamentWinner")
   registrations      TournamentRegistration[]
   bets               Bet[]
   notifications      Notification[]
@@ -52,6 +56,7 @@ model User {
   leaderboardEntries LeaderboardEntry[]
   hostedGames        Game[]
   claimedInviteCodes TournamentInviteCode[]
+  gameLogs           GameLog[]
 
   @@map("users")
 }
@@ -103,6 +108,7 @@ model UserStats {
   userId String @id
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  // Legacy fields
   tournamentsHosted Int       @default(0)
   tournamentsWon    Int       @default(0)
   totalMatchesWon   Int       @default(0)
@@ -110,6 +116,18 @@ model UserStats {
   tokensEarned      Int       @default(0)
   currentStreak     Int       @default(0)
   lastActivity      DateTime?
+
+  // Effort (50%) - Hosting & Organization
+  prizePoolsSeeded  Float     @default(0)  // Total $ seeded across tournaments
+  marketsCreated    Int       @default(0)  // Number of betting markets created
+
+  // Proficiency (35%) - Match/Tournament Performance
+  matchWins         Int       @default(0)  // Individual match victories
+  matchLosses       Int       @default(0)  // Individual match defeats
+  tournamentPlacements Json?               // {"2nd": 3, "3rd": 5, etc.}
+
+  // Activity (15%) - Engagement
+  totalHoursWatched Float     @default(0)  // Watch-to-Earn sessions
 
   @@map("user_stats")
 }
@@ -137,8 +155,28 @@ model Game {
   // Relations
   tournaments        Tournament[]
   leaderboardEntries LeaderboardEntry[]
+  logs               GameLog[]
 
   @@map("games")
+}
+
+model GameLog {
+  id        String   @id @default(cuid())
+  gameId    String
+  game      Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  content   String   // Raw log content (JSON string or text)
+  metadata  Json?    // Optional parsed metadata
+  
+  processed Boolean  @default(false)
+  
+  createdAt DateTime @default(now())
+
+  @@index([gameId, createdAt])
+  @@index([userId])
+  @@map("game_logs")
 }
 
 // ============================================
@@ -165,6 +203,9 @@ model Tournament {
 
   hostId String
   host   User   @relation(fields: [hostId], references: [id])
+
+  winnerId String?
+  winner   User?   @relation("TournamentWinner", fields: [winnerId], references: [id])
 
   maxPlayers        Int
   registeredPlayers Int      @default(0)
@@ -193,6 +234,9 @@ model Tournament {
 
   // Betting
   allowBetting Boolean @default(false)
+
+  // Platform-specific metadata (e.g., PokerNow table IDs)
+  metadata Json?
 
   status    TournamentStatus @default(PENDING)
   createdAt DateTime         @default(now())
@@ -252,6 +296,7 @@ enum MarketStatus {
   OPEN
   CLOSED
   SETTLED
+  CANCELLED
 }
 
 model BettingMarket {
@@ -273,6 +318,10 @@ model BettingMarket {
   status    MarketStatus @default(OPEN)
   
   winningOutcomeId String? // ID of the resolved winning outcome
+
+  // Phase 1: Autonomous Betting
+  lastSyncedHand Int?     @default(0) // Tracks log processing progress
+  isAutonomous   Boolean  @default(false) // Enable auto-odds engine
 
   createdAt DateTime @default(now())
 
@@ -321,8 +370,10 @@ model Bet {
 
   status       BetStatus @default(PENDING)
   payoutAmount Float?
+  oddsAtPlacement Float? // Locks the multiplier at bet-time
 
   placedAt DateTime @default(now())
+  bookingCode String? @unique
 
   @@map("bets")
 }

@@ -13,7 +13,7 @@ const activities = [
 
 export function LiveFeed() {
     return (
-        <div className="w-full bg-black/40 backdrop-blur-sm border-y border-white/5 py-2 overflow-hidden flex items-center">
+        <div className="w-full bg-black/60 backdrop-blur-3xl border-y border-white/5 py-2 overflow-hidden flex items-center">
             <div className="flex items-center gap-2 px-4 border-r border-white/10 shrink-0">
                 <div className="w-2 h-2 rounded-full bg-[var(--color-piggy-super-green)] animate-pulse" />
                 <span className="text-xs font-bold tracking-wider text-[var(--color-piggy-super-green)] uppercase">Live Feed</span>
@@ -39,8 +39,8 @@ export function LiveFeed() {
                 </motion.div>
 
                 {/* Gradient masks for smooth fade */}
-                <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-black/40 to-transparent pointer-events-none" />
-                <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-black/40 to-transparent pointer-events-none" />
+                <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-black/60 to-transparent pointer-events-none" />
+                <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-black/60 to-transparent pointer-events-none" />
             </div>
         </div>
     );

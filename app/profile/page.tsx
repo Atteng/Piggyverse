@@ -16,11 +16,6 @@ export default function ProfilePage() {
             {/* Profile Header */}
             <ProfileHeader />
 
-            {/* Power Levels Section */}
-            <div>
-                <h2 className="text-xl font-bold text-white mb-4">Power Levels (50/35/15)</h2>
-                <PowerLevels />
-            </div>
 
             {/* Stats Grid */}
             <div>

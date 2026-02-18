@@ -8,7 +8,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { createPublicClient, http, parseAbiItem, Log } from 'viem';
-import { base, mainnet } from 'viem/chains';
+import { base, mainnet, baseSepolia } from 'viem/chains';
 import { BLOCKCHAIN_CONFIG } from '@/lib/blockchain-config';
 
 // Define ABI Items to watch
@@ -45,6 +45,21 @@ export class TransactionIndexer {
                 contracts: [
                     BLOCKCHAIN_CONFIG.CONTRACTS.PIGGY_TOKEN,
                     BLOCKCHAIN_CONFIG.CONTRACTS.USDC_TOKEN
+                ]
+            });
+        }
+
+        // Base Sepolia (Testnet)
+        if (BLOCKCHAIN_CONFIG.RPC_URLS.BASE_SEPOLIA) {
+            this.chains.push({
+                name: 'BASE_SEPOLIA',
+                lastBlock: BigInt(0),
+                client: createPublicClient({
+                    chain: baseSepolia,
+                    transport: http(BLOCKCHAIN_CONFIG.RPC_URLS.BASE_SEPOLIA)
+                }),
+                contracts: [
+                    BLOCKCHAIN_CONFIG.CONTRACTS.TUSDC_TOKEN
                 ]
             });
         }

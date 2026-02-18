@@ -88,7 +88,15 @@ interface TournamentEditModalProps {
 }
 
 export function TournamentEditModal({ isOpen, onClose, tournament }: TournamentEditModalProps) {
-    const { toast } = useToast();
+    // Safely get toast with fallback
+    let toast: any;
+    try {
+        const toastHook = useToast();
+        toast = toastHook?.toast || (() => { });
+    } catch (e) {
+        console.error("TournamentEditModal useToast error:", e);
+        toast = () => { };
+    }
     const queryClient = useQueryClient();
 
     // Check if tournament has started (time-locked fields become read-only)
@@ -182,7 +190,7 @@ export function TournamentEditModal({ isOpen, onClose, tournament }: TournamentE
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="bg-[#1a1a1a] border-white/10 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="bg-black/60 backdrop-blur-3xl border-white/10 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>Edit Tournament</DialogTitle>
                     <DialogDescription>
@@ -206,7 +214,7 @@ export function TournamentEditModal({ isOpen, onClose, tournament }: TournamentE
                                 <FormItem>
                                     <FormLabel>Tournament Name</FormLabel>
                                     <FormControl>
-                                        <Input {...field} className="bg-black/20 border-white/10" />
+                                        <Input {...field} className="bg-black/60 border-white/10" />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -252,7 +260,7 @@ export function TournamentEditModal({ isOpen, onClose, tournament }: TournamentE
                                 <FormItem>
                                     <FormLabel>Banner Image URL</FormLabel>
                                     <FormControl>
-                                        <Input {...field} placeholder="https://..." className="bg-black/20 border-white/10" />
+                                        <Input {...field} placeholder="https://..." className="bg-black/60 border-white/10" />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -267,7 +275,7 @@ export function TournamentEditModal({ isOpen, onClose, tournament }: TournamentE
                                     <FormItem>
                                         <FormLabel>Discord Link</FormLabel>
                                         <FormControl>
-                                            <Input {...field} placeholder="https://discord.gg/..." className="bg-black/20 border-white/10" />
+                                            <Input {...field} placeholder="https://discord.gg/..." className="bg-black/60 border-white/10" />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -281,7 +289,7 @@ export function TournamentEditModal({ isOpen, onClose, tournament }: TournamentE
                                     <FormItem>
                                         <FormLabel>Stream Link</FormLabel>
                                         <FormControl>
-                                            <Input {...field} placeholder="https://twitch.tv/..." className="bg-black/20 border-white/10" />
+                                            <Input {...field} placeholder="https://twitch.tv/..." className="bg-black/60 border-white/10" />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -295,7 +303,7 @@ export function TournamentEditModal({ isOpen, onClose, tournament }: TournamentE
                                     <FormItem>
                                         <FormLabel>Lobby / Join Link</FormLabel>
                                         <FormControl>
-                                            <Input {...field} placeholder="https://game-lobby.com/..." className="bg-black/20 border-white/10" />
+                                            <Input {...field} placeholder="https://game-lobby.com/..." className="bg-black/60 border-white/10" />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>

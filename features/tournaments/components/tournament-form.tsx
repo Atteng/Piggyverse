@@ -4,7 +4,7 @@ import { useState, ChangeEvent, useEffect } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { CalendarIcon, Trophy, Users, Clock, Coins, ChevronRight, Check, Upload, X, Image as ImageIcon, Lock, Video, Trash2, Plus, AlertCircle } from "lucide-react";
+import { CalendarIcon, Trophy, Users, Clock, Coins, ChevronRight, Check, Upload, X, Image as ImageIcon, Lock, Video, Trash2, Plus, AlertCircle, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -119,7 +119,22 @@ const formSchema = z.object({
     path: ["entryFeeAmount"],
 });
 
-export function TournamentForm() {
+interface TournamentFormProps {
+    initialData?: z.infer<typeof formSchema>;
+    isEditing?: boolean;
+}
+
+export function TournamentForm({ initialData, isEditing = false }: TournamentFormProps) {
+    // Safely get toast with fallback
+    // Safely get toast with fallback
+    let toast: any;
+    try {
+        const toastHook = useToast();
+        toast = toastHook?.toast || (() => { });
+    } catch (e) {
+        // console.error("TournamentForm useToast error:", e);
+        toast = () => { };
+    }
     const router = useRouter();
     const [step, setStep] = useState(1);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -189,10 +204,20 @@ export function TournamentForm() {
             return;
         }
 
+        let outcomesToSave = newOutcomes;
+
+        // Auto-generate outcomes for Binary markets
+        if (newMarket.marketType === 'binary') {
+            outcomesToSave = [
+                { id: crypto.randomUUID(), label: 'YES' },
+                { id: crypto.randomUUID(), label: 'NO' }
+            ];
+        }
+
         const marketToAdd: any = {
             id: crypto.randomUUID(),
             ...newMarket,
-            outcomes: newOutcomes
+            outcomes: outcomesToSave
         };
 
         const currentMarkets = form.getValues("bettingMarkets") || [];
@@ -234,8 +259,6 @@ export function TournamentForm() {
             setNewOutcomes([]);
         }
     }, [newMarket.marketType]);
-
-    const { toast } = useToast();
 
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -401,16 +424,16 @@ export function TournamentForm() {
                         </div>
                     ))}
                 </div>
-                <div className="flex justify-between mt-2 text-xs font-mono text-gray-400 px-2">
-                    <span>Basic Info</span>
-                    <span>Settings</span>
-                    <span>Betting</span>
-                    <span>Review</span>
+                <div className="flex justify-between mt-2 text-[10px] font-mono text-gray-500 px-4">
+                    <span className={cn(step >= 1 && "text-[var(--color-piggy-deep-pink)] font-bold")}>Basic Info</span>
+                    <span className={cn(step >= 2 && "text-[var(--color-piggy-deep-pink)] font-bold")}>Settings</span>
+                    <span className={cn(step >= 3 && "text-[var(--color-piggy-deep-pink)] font-bold")}>Betting</span>
+                    <span className={cn(step >= 4 && "text-[var(--color-piggy-deep-pink)] font-bold")}>Review</span>
                 </div>
             </div>
 
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="space-y-8 bg-black/40 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-xl">
+                <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="space-y-8 bg-black/60 backdrop-blur-3xl border border-white/10 rounded-3xl p-8 shadow-xl">
 
                     {/* STEP 1: BASIC INFO */}
                     {step === 1 && (
@@ -426,9 +449,12 @@ export function TournamentForm() {
                                     name="name"
                                     render={({ field }) => (
                                         <FormItem className="col-span-full md:col-span-3">
-                                            <FormLabel className="text-white">Tournament Name</FormLabel>
+                                            <FormLabel className="text-white">
+                                                <span className="md:hidden">Name</span>
+                                                <span className="hidden md:inline">Tournament Name</span>
+                                            </FormLabel>
                                             <FormControl>
-                                                <Input placeholder="e.g. Weekly Piggy Brawl #42" {...field} className="h-12 border-white/10 bg-black/20 focus:border-[var(--color-piggy-deep-pink)] transition-colors" />
+                                                <Input placeholder="e.g. Weekly Piggy Brawl #42" {...field} className="h-12 border-white/10 bg-black/60 focus:border-[var(--color-piggy-deep-pink)] transition-colors" />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -574,9 +600,11 @@ export function TournamentForm() {
                                     <Button
                                         type="button"
                                         onClick={nextStep}
-                                        className="bg-[var(--color-piggy-deep-pink)] hover:bg-[var(--color-piggy-deep-pink)]/80 text-white font-bold h-12 w-full md:w-auto px-8"
+                                        className="bg-[var(--color-piggy-deep-pink)] hover:bg-[var(--color-piggy-deep-pink)]/90 text-white font-black uppercase tracking-widest text-xs h-12 w-full md:w-auto px-8 rounded-2xl shadow-[0_0_20px_rgba(255,47,122,0.3)] transition-all hover:scale-[1.02] active:scale-[0.98]"
                                     >
-                                        Next Step <ChevronRight className="w-4 h-4 ml-2" />
+                                        <span className="md:hidden">Next</span>
+                                        <span className="hidden md:inline">Next Step</span>
+                                        <ChevronRight className="w-4 h-4 ml-2" />
                                     </Button>
                                 </div>
                             </div>
@@ -599,7 +627,10 @@ export function TournamentForm() {
                                         name="startDate"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel className="text-white">Start Date</FormLabel>
+                                                <FormLabel className="text-white">
+                                                    <span className="md:hidden">Start</span>
+                                                    <span className="hidden md:inline">Start Date</span>
+                                                </FormLabel>
                                                 <FormControl>
                                                     <Input
                                                         type="date"
@@ -618,7 +649,10 @@ export function TournamentForm() {
                                         name="startTime"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel className="text-white">Start Time</FormLabel>
+                                                <FormLabel className="text-white">
+                                                    <span className="md:hidden">Time</span>
+                                                    <span className="hidden md:inline">Start Time</span>
+                                                </FormLabel>
                                                 <FormControl>
                                                     <Input
                                                         type="time"
@@ -636,7 +670,10 @@ export function TournamentForm() {
                                         name="playerCount"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel className="text-white">Max Players</FormLabel>
+                                                <FormLabel className="text-white">
+                                                    <span className="md:hidden">Players</span>
+                                                    <span className="hidden md:inline">Max Players</span>
+                                                </FormLabel>
                                                 <FormControl>
                                                     <div className="relative">
                                                         <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
@@ -798,7 +835,10 @@ export function TournamentForm() {
                                     name="discordLink"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="text-white">Discord / Community Link</FormLabel>
+                                            <FormLabel className="text-white">
+                                                <span className="md:hidden">Discord</span>
+                                                <span className="hidden md:inline">Discord / Community Link</span>
+                                            </FormLabel>
                                             <FormControl>
                                                 <Input placeholder="https://discord.gg/..." {...field} value={field.value ?? ""} className="h-12 border-white/10 bg-black/20 focus:border-[var(--color-piggy-deep-pink)]" />
                                             </FormControl>
@@ -813,7 +853,10 @@ export function TournamentForm() {
                                     name="lobbyUrl"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="text-white">Tournament / Lobby URL (Direct Link)</FormLabel>
+                                            <FormLabel className="text-white">
+                                                <span className="md:hidden">Lobby URL</span>
+                                                <span className="hidden md:inline">Tournament / Lobby URL (Direct Link)</span>
+                                            </FormLabel>
                                             <FormControl>
                                                 <Input placeholder="https://game-lobby.com/join/..." {...field} value={field.value ?? ""} className="h-12 border-white/10 bg-black/20 focus:border-[var(--color-piggy-deep-pink)]" />
                                             </FormControl>
@@ -1037,21 +1080,24 @@ export function TournamentForm() {
                             )}
 
 
-                            <div className="col-span-full pt-4 flex justify-between">
+                            <div className="col-span-full pt-4 flex gap-3 justify-between border-t border-white/5 mt-8">
                                 <Button
                                     type="button"
-                                    variant="outline"
+                                    variant="ghost"
                                     onClick={prevStep}
-                                    className="h-12 text-gray-400 hover:text-white border-white/10"
+                                    className="h-12 text-white/50 hover:text-white hover:bg-white/5 font-mono uppercase tracking-widest text-xs px-6 rounded-2xl transition-all"
                                 >
-                                    Back
+                                    <span className="hidden md:inline">Back</span>
+                                    <ChevronRight className="md:hidden w-4 h-4 rotate-180" />
                                 </Button>
                                 <Button
                                     type="button"
                                     onClick={nextStep}
-                                    className="bg-[var(--color-piggy-deep-pink)] hover:bg-[var(--color-piggy-deep-pink)]/80 text-white font-bold h-12 w-full md:w-auto px-8"
+                                    className="flex-1 md:flex-none bg-[var(--color-piggy-deep-pink)] hover:bg-[var(--color-piggy-deep-pink)]/90 text-white font-black uppercase tracking-widest text-xs h-12 px-8 rounded-2xl shadow-[0_0_20px_rgba(255,47,122,0.3)] transition-all hover:scale-[1.02] active:scale-[0.98]"
                                 >
-                                    Next Step <ChevronRight className="w-4 h-4 ml-2" />
+                                    <span className="md:hidden">Next</span>
+                                    <span className="hidden md:inline">Next Step</span>
+                                    <ChevronRight className="w-4 h-4 ml-2" />
                                 </Button>
                             </div>
                         </div>
@@ -1127,7 +1173,7 @@ export function TournamentForm() {
                                 </div>
 
                                 {/* Outcomes Logic */}
-                                {newMarket.marketType === "parimutuel" && (
+                                {(newMarket.marketType === "parimutuel" || newMarket.marketType === "weighted") && (
                                     <div className="space-y-2">
                                         <FormLabel className="text-white">Outcomes</FormLabel>
                                         <div className="flex gap-2">
@@ -1154,6 +1200,12 @@ export function TournamentForm() {
                                                 }
                                             }}>Add</Button>
                                         </div>
+                                        {newMarket.marketType === "weighted" && (
+                                            <p className="text-xs text-gray-400">
+                                                For Weighted markets, initial odds will be calculated based on the number of outcomes.
+                                                You can adjust them later in the market management view.
+                                            </p>
+                                        )}
                                         <div className="flex flex-wrap gap-2 mt-2">
                                             {newOutcomes.map(o => (
                                                 <Badge key={o.id} variant="secondary" className="gap-2">
@@ -1165,8 +1217,39 @@ export function TournamentForm() {
                                     </div>
                                 )}
 
+                                {newMarket.marketType === "binary" && (
+                                    <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl">
+                                        <p className="text-sm text-blue-300 flex items-center gap-2">
+                                            <AlertCircle className="w-4 h-4" />
+                                            Binary markets automatically have <strong>YES</strong> and <strong>NO</strong> outcomes.
+                                        </p>
+                                    </div>
+                                )}
+
+                                {newMarket.marketType === "score" && (
+                                    <div className="space-y-4">
+                                        <div className="p-4 bg-purple-500/10 border border-purple-500/20 rounded-xl">
+                                            <p className="text-sm text-purple-300 flex items-center gap-2">
+                                                <AlertCircle className="w-4 h-4" />
+                                                Score markets allow users to predict exact scores or stats.
+                                            </p>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <FormLabel className="text-white">Scoring Rules / Details</FormLabel>
+                                            <Textarea
+                                                placeholder="e.g. Predict the exact number of kills for Player A."
+                                                className="bg-black/40 border-white/10 text-white min-h-[80px]"
+                                                onChange={(e) => setNewMarket(prev => ({
+                                                    ...prev,
+                                                    scoreConfig: { ...prev.scoreConfig, scoringRules: e.target.value, selectionLimit: 1 }
+                                                }))}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+
                                 <div className="pt-2">
-                                    <Button type="button" onClick={handleAddMarket} className="w-full bg-[var(--color-piggy-deep-pink)] text-white hover:bg-[var(--color-piggy-deep-pink)]/80">
+                                    <Button type="button" onClick={handleAddMarket} className="w-full bg-[var(--color-piggy-deep-pink)] hover:bg-[var(--color-piggy-deep-pink)]/90 text-white font-black uppercase tracking-widest text-xs h-12 rounded-2xl shadow-[0_0_20px_rgba(255,47,122,0.3)] transition-all hover:scale-[1.02] active:scale-[0.98]">
                                         Save Market to List
                                     </Button>
                                     {selectedGame?.hasOracleIntegration && (
@@ -1177,9 +1260,25 @@ export function TournamentForm() {
                                 </div>
                             </div>
 
-                            <div className="pt-6 flex justify-between">
-                                <Button type="button" variant="outline" onClick={prevStep} className="h-12 text-gray-400 hover:text-white border-white/10">Back</Button>
-                                <Button type="button" onClick={nextStep} className="bg-[var(--color-piggy-deep-pink)] hover:bg-[var(--color-piggy-deep-pink)]/80 text-white font-bold h-12 px-8">Next Step <ChevronRight className="w-4 h-4 ml-2" /></Button>
+                            <div className="pt-6 flex gap-3 justify-between border-t border-white/5 mt-8">
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    onClick={prevStep}
+                                    className="h-12 text-white/50 hover:text-white hover:bg-white/5 font-mono uppercase tracking-widest text-xs px-6 rounded-2xl transition-all"
+                                >
+                                    <span className="hidden md:inline">Back</span>
+                                    <ChevronRight className="md:hidden w-4 h-4 rotate-180" />
+                                </Button>
+                                <Button
+                                    type="button"
+                                    onClick={nextStep}
+                                    className="flex-1 md:flex-none bg-[var(--color-piggy-deep-pink)] hover:bg-[var(--color-piggy-deep-pink)]/90 text-white font-black uppercase tracking-widest text-xs h-12 px-8 rounded-2xl shadow-[0_0_20px_rgba(255,47,122,0.3)] transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                >
+                                    <span className="md:hidden">Next</span>
+                                    <span className="hidden md:inline">Next Step</span>
+                                    <ChevronRight className="w-4 h-4 ml-2" />
+                                </Button>
                             </div>
                         </div>
                     )}
@@ -1264,21 +1363,23 @@ export function TournamentForm() {
                                 </div>
                             </div>
 
-                            <div className="pt-6 flex justify-between">
+                            <div className="pt-6 flex gap-3 justify-between border-t border-white/5 mt-8">
                                 <Button
                                     type="button"
-                                    variant="outline"
+                                    variant="ghost"
                                     onClick={prevStep}
-                                    className="h-12 text-gray-400 hover:text-white border-white/10"
+                                    className="h-12 text-white/50 hover:text-white hover:bg-white/5 font-mono uppercase tracking-widest text-xs px-6 rounded-2xl transition-all"
                                 >
-                                    Back
+                                    <span className="hidden md:inline">Back</span>
+                                    <ChevronRight className="md:hidden w-4 h-4 rotate-180" />
                                 </Button>
                                 <Button
                                     type="submit"
                                     disabled={isSubmitting}
-                                    className="bg-[var(--color-piggy-deep-pink)] hover:bg-[var(--color-piggy-deep-pink)]/90 text-white font-black uppercase tracking-wider h-12 px-8 shadow-[0_0_20px_rgba(255,47,122,0.6)] disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="flex-1 md:flex-none bg-[var(--color-piggy-deep-pink)] hover:bg-[var(--color-piggy-deep-pink)]/90 text-white font-black uppercase tracking-widest text-xs h-12 px-8 rounded-2xl shadow-[0_0_20px_rgba(255,47,122,0.3)] transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    {isSubmitting ? "Creating..." : "Create Tournament"}
+                                    {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <span className="md:hidden">Create</span>}
+                                    <span className="hidden md:inline">{isSubmitting ? "" : "Create Tournament"}</span>
                                 </Button>
                             </div>
                         </div>

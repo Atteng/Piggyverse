@@ -37,12 +37,11 @@ export function ActiveTournamentsWidget() {
 
     const currentTournament = tournaments[currentIndex];
 
-    // Loading State
     if (isLoading) {
         return (
-            <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-3xl p-6 h-full flex flex-col items-center justify-center min-h-[300px]">
+            <div className="bg-black/60 backdrop-blur-3xl border border-white/5 rounded-2xl md:rounded-[2.5rem] p-4 md:p-6 h-full flex flex-col items-center justify-center min-h-[300px]">
                 <Loader2 className="w-8 h-8 animate-spin text-[var(--color-piggy-deep-pink)] mb-2" />
-                <p className="text-gray-400 font-mono text-sm">Loading tournaments...</p>
+                <p className="text-white/40 font-mono text-xs uppercase tracking-widest">Loading tournaments...</p>
             </div>
         );
     }
@@ -50,9 +49,9 @@ export function ActiveTournamentsWidget() {
     // Empty State
     if (!currentTournament) {
         return (
-            <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-3xl p-6 h-full flex flex-col">
+            <div className="bg-black/60 backdrop-blur-3xl border border-white/5 rounded-2xl md:rounded-[2.5rem] p-4 md:p-6 h-full flex flex-col">
                 <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-xl font-bold text-white font-mono">Tournaments Active</h3>
+                    <h3 className="text-xl font-bold text-white font-mono uppercase tracking-tighter">Tournaments Active</h3>
                 </div>
                 <div className="flex-1 flex flex-col items-center justify-center text-center p-6 space-y-4">
                     <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center">
@@ -76,10 +75,10 @@ export function ActiveTournamentsWidget() {
     }
 
     return (
-        <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-3xl p-6 h-full flex flex-col">
+        <div className="bg-black/60 backdrop-blur-3xl border border-white/5 rounded-2xl md:rounded-[2.5rem] p-4 md:p-6 h-full flex flex-col">
             <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold text-white font-mono">Tournaments Active</h3>
-                <span className="text-xs font-mono text-gray-400">
+                <h3 className="text-xl font-bold text-white font-mono uppercase tracking-tighter">Tournaments Active</h3>
+                <span className="text-[10px] font-black text-white/40 font-mono uppercase tracking-widest">
                     {currentIndex + 1} / {tournaments.length}
                 </span>
             </div>
@@ -97,7 +96,7 @@ export function ActiveTournamentsWidget() {
                     {/* Betting Badge (If Betting Allowed) */}
                     {currentTournament.bettingAllowed && (
                         <div className="absolute top-4 left-4 z-10">
-                            <span className="px-3 py-1 bg-black/60 backdrop-blur-md rounded-full text-xs font-bold text-gray-200 border border-white/10">
+                            <span className="px-3 py-1 bg-black/60 backdrop-blur-md rounded-full text-sm font-bold text-gray-200 border border-white/10">
                                 Betting Allowed
                             </span>
                         </div>
@@ -105,7 +104,7 @@ export function ActiveTournamentsWidget() {
 
                     {/* Status Badge */}
                     <div className="absolute top-4 right-4 z-10">
-                        <span className="px-3 py-1 bg-black/60 backdrop-blur-md rounded-full text-xs font-bold text-gray-200 border border-white/10">
+                        <span className="px-3 py-1 bg-black/60 backdrop-blur-md rounded-full text-sm font-bold text-gray-200 border border-white/10">
                             {currentTournament.status}
                         </span>
                     </div>
@@ -120,7 +119,7 @@ export function ActiveTournamentsWidget() {
                         </div>
 
                         <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2 text-gray-300 font-mono text-sm font-bold">
+                            <div className="flex items-center gap-2 text-gray-300 font-mono text-base font-bold">
                                 <Users className="w-4 h-4" />
                                 <span>{currentTournament.registered.toLocaleString()}</span>
                             </div>
@@ -131,7 +130,7 @@ export function ActiveTournamentsWidget() {
                         </div>
 
                         <div className="pt-3 border-t border-white/10 flex items-center justify-between">
-                            <div className="font-mono text-xs text-gray-400">
+                            <div className="font-mono text-sm text-gray-400">
                                 Entry: <span className="text-white font-bold ml-1">{currentTournament.entryFee}</span>
                             </div>
                         </div>

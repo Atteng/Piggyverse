@@ -18,7 +18,15 @@ interface MarketResolutionModalProps {
 }
 
 export function MarketResolutionModal({ isOpen, onClose, market, tournamentId }: MarketResolutionModalProps) {
-    const { toast } = useToast();
+    // Safely get toast with fallback
+    let toast: any;
+    try {
+        const toastHook = useToast();
+        toast = toastHook?.toast || (() => { });
+    } catch (e) {
+        console.error("MarketResolutionModal useToast error:", e);
+        toast = () => { };
+    }
     const queryClient = useQueryClient();
     const [selectedOutcomeId, setSelectedOutcomeId] = useState<string>("");
 

@@ -37,14 +37,14 @@ function LibraryPageContent() {
     };
 
     return (
-        <div className="w-full max-w-6xl mx-auto px-6 md:px-0 py-8 space-y-8">
+        <div className="w-full max-w-7xl mx-auto px-2.5 md:px-6 py-6 md:py-8 space-y-6 md:space-y-8">
             {/* Page Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-4xl font-black text-white font-mono tracking-tighter mb-2">
+                    <h1 className="text-3xl md:text-4xl font-black text-white font-mono tracking-tighter mb-2">
                         Game Library
                     </h1>
-                    <p className="text-white font-mono text-sm max-w-md">
+                    <p className="text-white font-mono text-xs md:text-sm max-w-md opacity-70">
                         Explore the PiggyVerse collection. Play, compete, and earn tokens in our curated list of games.
                     </p>
                 </div>
@@ -70,7 +70,7 @@ function LibraryPageContent() {
                 <>
                     {/* Games Grid */}
                     {games.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {games.map((game: any, index: number) => (
                                 <motion.div
                                     key={game.id}

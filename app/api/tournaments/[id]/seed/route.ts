@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { incrementPrizePoolSeeded } from '@/lib/stats';
 import { createPublicClient, http, formatEther, parseAbi, formatUnits } from 'viem';
 import { base } from 'viem/chains';
 
@@ -121,15 +122,15 @@ export async function POST(
                 }, { status: 400 });
             }
 
-            // Update Tournament
-            const updatedTournament = await prisma.tournament.update({
-                where: { id: tournamentId },
-                data: {
-                    prizePoolAmount: { increment: actualAmountFinal },
-                    prizePoolSeed: { increment: actualAmountFinal },
-                    // Update token if it's the first contribution or matches
-                    prizePoolToken: tournament.prizePoolToken || token
-                }
+            // Update stats & rank via centralized utility
+            // Use live Price Oracle to convert token amount to USD value for scoring
+            const { getUSDValue } = await import('@/lib/price-oracle');
+            const usdValue = await getUSDValue(token, actualAmountFinal);
+            await incrementPrizePoolSeeded(session.user.id, usdValue);
+
+            // Fetch final state for response
+            const finalTournament = await prisma.tournament.findUnique({
+                where: { id: tournamentId }
             });
 
             // Create a record in TransactionReceipt for tracking
@@ -149,8 +150,8 @@ export async function POST(
             return NextResponse.json({
                 success: true,
                 amount: actualAmountFinal,
-                newPrizePool: updatedTournament.prizePoolAmount,
-                newSeedAmount: updatedTournament.prizePoolSeed
+                newPrizePool: finalTournament?.prizePoolAmount,
+                newSeedAmount: finalTournament?.prizePoolSeed
             });
 
         } catch (chainError) {

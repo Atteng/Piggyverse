@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { generateBookingCode } from '@/lib/betting/booking-codes';
+import { getOutcomeOdds, updateMarketWeights } from '@/lib/betting/odds-engine';
 
 // GET /api/betting/bets?userId=xxx - Get user's bets
 export async function GET(request: NextRequest) {
@@ -80,6 +82,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Fetch market to validate
+        // Cast to any because isAutonomous is missing from Prisma type but exists in DB
         const market = await prisma.bettingMarket.findUnique({
             where: { id: marketId },
             include: {
@@ -127,6 +130,21 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        // Phase 1: Capture odds at placement
+        // If market is autonomous, use calculated odds. Else use host-set weight.
+        let oddsAtPlacement: number | null = null;
+        if ((market as any).isAutonomous) {
+            try {
+                oddsAtPlacement = await getOutcomeOdds(marketId, outcomeId);
+            } catch (e) {
+                console.error("Failed to calculate odds at placement", e);
+                // Fallback to current weight if engine fails
+                oddsAtPlacement = outcome.weight || 1.0;
+            }
+        } else {
+            oddsAtPlacement = outcome.weight;
+        }
+
         // Create bet (PENDING status - waiting for blockchain confirmation)
         const bet = await prisma.bet.create({
             data: {
@@ -135,7 +153,9 @@ export async function POST(request: NextRequest) {
                 userId: user.id,
                 amount,
                 token,
-                status: 'PENDING'
+                status: 'PENDING',
+                bookingCode: generateBookingCode(),
+                oddsAtPlacement // Store the locked odds
             },
             include: {
                 outcome: true,
@@ -164,6 +184,13 @@ export async function POST(request: NextRequest) {
             }
         });
 
+        // Phase 1: Trigger odds recalculation for autonomous markets
+        // We do this *after* the pool update so the next user sees the impact of this bet.
+        // No await here to avoid slowing down the response.
+        if ((market as any).isAutonomous) {
+            updateMarketWeights(marketId).catch(console.error);
+        }
+
         // Create notification
         await prisma.notification.create({
             data: {
@@ -172,8 +199,7 @@ export async function POST(request: NextRequest) {
                 title: 'Bet Placed',
                 message: `You placed a bet of ${amount} ${token} on "${outcome.label}" for ${market.tournament.name}`,
                 actionUrl: `/competitive-hub/${market.tournament.id}`,
-                actionLabel: 'View Tournament',
-                amount
+                amount: amount
             }
         });
 

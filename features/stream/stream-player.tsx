@@ -35,7 +35,7 @@ export function StreamPlayer({ stream }: StreamPlayerProps) {
 
     if (!stream || !isLive) {
         return (
-            <div className="rounded-2xl overflow-hidden bg-black/40 backdrop-blur-xl border border-white/10 h-full flex flex-col items-center justify-center p-8 text-center">
+            <div className="rounded-2xl overflow-hidden bg-black/60 backdrop-blur-3xl border border-white/10 h-full flex flex-col items-center justify-center p-8 text-center">
                 <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
                     <VolumeX className="w-8 h-8 text-gray-500" />
                 </div>
@@ -46,7 +46,7 @@ export function StreamPlayer({ stream }: StreamPlayerProps) {
     }
 
     return (
-        <div className="relative rounded-2xl overflow-hidden bg-black/40 backdrop-blur-xl border border-white/10 group h-full flex flex-col">
+        <div className="relative rounded-2xl overflow-hidden bg-black/60 backdrop-blur-3xl border border-white/10 group h-full flex flex-col">
             {/* Video Player Area - Flexible height */}
             <div className="relative w-full flex-1 min-h-0">
                 {/* Placeholder Video/Stream */}
@@ -136,7 +136,7 @@ export function StreamPlayer({ stream }: StreamPlayerProps) {
             </div>
 
             {/* Stream Info - Always visible */}
-            <div className="p-4 space-y-2 flex-shrink-0 bg-black/20">
+            <div className="p-4 space-y-2 flex-shrink-0 bg-black/60 backdrop-blur-3xl">
                 <h1 className="text-xl font-black text-[var(--color-piggy-deep-pink)] font-mono tracking-tight">
                     {stream.title}
                 </h1>

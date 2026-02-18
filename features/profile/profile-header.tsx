@@ -31,7 +31,7 @@ export function ProfileHeader() {
 
     if (isLoading) {
         return (
-            <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-3xl p-8 flex items-center justify-center h-48">
+            <div className="bg-black/60 backdrop-blur-3xl border border-white/10 rounded-3xl p-8 flex items-center justify-center h-48">
                 <Loader2 className="w-8 h-8 text-white/50 animate-spin" />
             </div>
         );
@@ -39,14 +39,14 @@ export function ProfileHeader() {
 
     if (!user) {
         return (
-            <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-3xl p-8 text-center">
+            <div className="bg-black/60 backdrop-blur-3xl border border-white/10 rounded-3xl p-8 text-center">
                 <p className="text-white/50">Please sign in to view your profile</p>
             </div>
         );
     }
 
     return (
-        <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-3xl p-8">
+        <div className="bg-black/60 backdrop-blur-3xl border border-white/10 rounded-3xl p-8">
             <div className="flex flex-col lg:flex-row items-center lg:items-start gap-6">
                 {/* Avatar */}
                 <div className="relative shrink-0">

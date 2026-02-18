@@ -8,15 +8,56 @@ export async function GET(request: NextRequest) {
         const gameId = searchParams.get("gameId");
         const limit = parseInt(searchParams.get("limit") || "10");
 
-        const where: any = {};
-        if (gameId) {
-            where.gameId = gameId;
-        } else {
-            where.gameId = null; // Global leaderboard
+        // If no gameId, fetch global leaderboard from User model
+        if (!gameId) {
+            const users = await prisma.user.findMany({
+                where: {
+                    globalRank: { gt: 0 }
+                },
+                orderBy: {
+                    globalRank: "desc"
+                },
+                take: limit,
+                select: {
+                    id: true,
+                    username: true,
+                    avatarUrl: true,
+                    globalRank: true,
+                    effortScore: true,
+                    proficiencyScore: true,
+                    activityScore: true,
+                    stats: {
+                        select: {
+                            matchWins: true,
+                            totalHoursPlayed: true,
+                            tournamentsWon: true,
+                        }
+                    }
+                }
+            });
+
+            // Map to expected format
+            const entries = users.map((user, index) => ({
+                rank: index + 1,
+                user: {
+                    id: user.id,
+                    username: user.username,
+                    avatarUrl: user.avatarUrl,
+                    effortScore: user.effortScore
+                },
+                // Flatten stats for frontend compatibility
+                matchWins: user.stats?.matchWins || 0,
+                timePlayedHours: user.stats?.totalHoursPlayed || 0,
+                tournamentsWon: user.stats?.tournamentsWon || 0,
+                game: null
+            }));
+
+            return NextResponse.json(entries);
         }
 
+        // Game-specific leaderboard (keep existing logic)
         const entries = await prisma.leaderboardEntry.findMany({
-            where,
+            where: { gameId },
             take: limit,
             orderBy: {
                 rank: "asc",
@@ -29,8 +70,6 @@ export async function GET(request: NextRequest) {
                         avatarUrl: true,
                         globalRank: true,
                         effortScore: true,
-                        proficiencyScore: true,
-                        activityScore: true,
                     },
                 },
                 game: {

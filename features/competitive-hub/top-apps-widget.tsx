@@ -15,25 +15,25 @@ export function TopAppsWidget() {
     // In a real scenario, we'd request sorted by popularity/players
     const { data, isLoading } = useQuery({
         queryKey: ['games', 'top'],
-        queryFn: () => getGames({ limit: 4 }), // We really want a sort here, but basic list works for now
+        queryFn: () => getGames({ limit: 4, sort: 'popular' }),
     });
 
     const games = data?.games || [];
 
     if (isLoading) {
         return (
-            <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-3xl p-6 h-full flex flex-col items-center justify-center">
+            <div className="bg-black/60 backdrop-blur-3xl border border-white/10 rounded-3xl p-6 h-full flex flex-col items-center justify-center">
                 <Loader2 className="w-6 h-6 animate-spin text-[var(--color-piggy-deep-pink)]" />
             </div>
         );
     }
 
     return (
-        <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-3xl p-6 h-full flex flex-col">
+        <div className="bg-black/60 backdrop-blur-3xl border border-white/5 rounded-2xl md:rounded-[2.5rem] p-4 md:p-6 h-full flex flex-col" >
             <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold text-white font-mono">Top Apps</h3>
-                <span className="text-[10px] font-bold text-[var(--color-piggy-deep-pink)] bg-[var(--color-piggy-deep-pink)]/10 px-2.5 py-1 rounded-full border border-[var(--color-piggy-deep-pink)]/20">
-                    WEEKLY
+                <h3 className="text-xl font-bold text-white font-mono uppercase tracking-tighter">Top Apps</h3>
+                <span className="text-[10px] font-black text-[var(--color-piggy-deep-pink)] bg-[var(--color-piggy-deep-pink)]/10 px-2.5 py-1 rounded-full border border-[var(--color-piggy-deep-pink)]/20 uppercase tracking-wider">
+                    Weekly
                 </span>
             </div>
 
@@ -50,13 +50,13 @@ export function TopAppsWidget() {
                                         <img src={game.thumbnail} alt={game.title} className="w-full h-full object-cover" />
                                     </div>
                                     <div className="flex flex-col">
-                                        <span className="font-mono text-sm font-bold text-white group-hover:text-[var(--color-piggy-deep-pink)] transition-colors truncate max-w-[120px]">
+                                        <span className="text-sm font-bold text-white group-hover:text-[var(--color-piggy-deep-pink)] transition-colors truncate max-w-[120px]">
                                             {game.title}
                                         </span>
                                         {isOwner && (
                                             <button
                                                 onClick={() => setEditingGame(game)}
-                                                className="text-[10px] text-gray-500 hover:text-[var(--color-piggy-deep-pink)] font-bold flex items-center gap-1 transition-colors"
+                                                className="text-xs text-gray-500 hover:text-[var(--color-piggy-deep-pink)] font-bold flex items-center gap-1 transition-colors"
                                             >
                                                 <Settings className="w-3 h-3" /> Edit
                                             </button>
@@ -65,7 +65,7 @@ export function TopAppsWidget() {
                                 </div>
 
                                 {/* Mock trend for UI consistency */}
-                                <div className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full ${index < 2 ? 'text-[var(--color-piggy-super-green)] bg-[var(--color-piggy-super-green)]/10' :
+                                <div className={`flex items-center gap-1 text-sm font-bold px-2 py-1 rounded-full ${index < 2 ? 'text-[var(--color-piggy-super-green)] bg-[var(--color-piggy-super-green)]/10' :
                                     'text-gray-400 bg-gray-500/10'
                                     }`}>
                                     {index < 2 ? <TrendingUp className="w-3 h-3" /> : <Minus className="w-3 h-3" />}
@@ -87,6 +87,6 @@ export function TopAppsWidget() {
                     game={editingGame}
                 />
             )}
-        </div>
+        </div >
     );
 }

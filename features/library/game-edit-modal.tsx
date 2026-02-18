@@ -101,7 +101,7 @@ export function GameEditModal({ isOpen, onClose, game }: GameEditModalProps) {
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="bg-[#1a1a1a] border-white/10 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="bg-black/60 backdrop-blur-3xl border-white/10 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle className="text-2xl font-black font-mono uppercase tracking-tighter">Edit Game</DialogTitle>
                     <DialogDescription className="text-gray-400 font-mono">
@@ -118,7 +118,7 @@ export function GameEditModal({ isOpen, onClose, game }: GameEditModalProps) {
                                 <FormItem>
                                     <FormLabel className="text-sm font-bold uppercase tracking-wider text-gray-400">Game Title</FormLabel>
                                     <FormControl>
-                                        <Input {...field} className="bg-black/20 border-white/10 text-white focus:border-[var(--color-piggy-deep-pink)] transition-colors" />
+                                        <Input {...field} className="bg-black/60 border-white/10 text-white focus:border-[var(--color-piggy-deep-pink)] transition-colors" />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -163,7 +163,7 @@ export function GameEditModal({ isOpen, onClose, game }: GameEditModalProps) {
                                 <FormItem>
                                     <FormLabel className="text-sm font-bold uppercase tracking-wider text-gray-400">Game URL (Where to play)</FormLabel>
                                     <FormControl>
-                                        <Input {...field} placeholder="https://..." className="bg-black/20 border-white/10 text-white focus:border-[var(--color-piggy-deep-pink)] transition-colors" />
+                                        <Input {...field} placeholder="https://..." className="bg-black/60 border-white/10 text-white focus:border-[var(--color-piggy-deep-pink)] transition-colors" />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -176,7 +176,7 @@ export function GameEditModal({ isOpen, onClose, game }: GameEditModalProps) {
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel className="text-sm font-bold uppercase tracking-wider text-gray-400">Categories</FormLabel>
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-black/20 p-4 rounded-xl border border-white/5">
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-black/60 p-4 rounded-xl border border-white/5">
                                         {CATEGORIES.map((cat) => (
                                             <div key={cat} className="flex items-center space-x-2">
                                                 <Checkbox
@@ -204,7 +204,7 @@ export function GameEditModal({ isOpen, onClose, game }: GameEditModalProps) {
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel className="text-sm font-bold uppercase tracking-wider text-gray-400">Platforms</FormLabel>
-                                    <div className="flex flex-wrap gap-6 bg-black/20 p-4 rounded-xl border border-white/5">
+                                    <div className="flex flex-wrap gap-6 bg-black/60 p-4 rounded-xl border border-white/5">
                                         {PLATFORMS.map((plat) => (
                                             <div key={plat} className="flex items-center space-x-2">
                                                 <Checkbox

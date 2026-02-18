@@ -2,6 +2,24 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { incrementTournamentsHosted, incrementMarketsCreated } from "@/lib/stats";
+import { extractPokerNowTableId, extractPokerNowTournamentId, isPokerNowUrl } from "@/lib/utils/pokernow";
+
+/**
+ * Extract PokerNow metadata from lobby URL
+ */
+function extractPokerNowMetadata(lobbyUrl: string) {
+    if (!isPokerNowUrl(lobbyUrl)) return undefined;
+
+    const tableId = extractPokerNowTableId(lobbyUrl);
+    const tournamentId = extractPokerNowTournamentId(lobbyUrl);
+
+    return {
+        pokerNowTableId: tableId,
+        pokerNowTournamentId: tournamentId,
+        lobbyPlatform: 'pokernow',
+    };
+}
 
 // GET /api/tournaments - Get all tournaments with filters
 export async function GET(request: NextRequest) {
@@ -157,6 +175,8 @@ export async function POST(request: NextRequest) {
                 inviteCodes: inviteCodes && inviteCodes.length > 0 ? {
                     create: inviteCodes.map((code: string) => ({ code }))
                 } : undefined,
+                // Auto-extract PokerNow IDs from lobby URL
+                metadata: lobbyUrl ? extractPokerNowMetadata(lobbyUrl) : undefined,
             },
             include: {
                 game: {
@@ -213,52 +233,12 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        // Update Host Stats
-        await prisma.userStats.upsert({
-            where: { userId: session.user.id },
-            update: {
-                tournamentsHosted: { increment: 1 },
-                lastActivity: new Date(),
-            },
-            create: {
-                userId: session.user.id,
-                tournamentsHosted: 1,
-                lastActivity: new Date(),
-            }
-        });
+        // Update Host Stats & Rank using centralized utility
+        await incrementTournamentsHosted(session.user.id);
 
-        // Update User Activity Score
-        await prisma.user.update({
-            where: { id: session.user.id },
-            data: {
-                activityScore: { increment: 50 }
-            }
-        });
-
-        // Update / Create Global Leaderboard Entry
-        const lbEntry = await prisma.leaderboardEntry.findFirst({
-            where: { userId: session.user.id, gameId: null }
-        });
-
-        if (lbEntry) {
-            await prisma.leaderboardEntry.update({
-                where: { id: lbEntry.id },
-                data: {
-                    totalScore: { increment: 50 },
-                }
-            });
-        } else {
-            await prisma.leaderboardEntry.create({
-                data: {
-                    userId: session.user.id,
-                    gameId: null,
-                    rank: 999,
-                    totalScore: 50,
-                    tournamentsWon: 0,
-                    timePlayedHours: 0,
-                    matchWins: 0
-                }
-            });
+        // Track market creation stats if applicable
+        if (allowBetting && bettingMarkets?.length > 0) {
+            await incrementMarketsCreated(session.user.id, bettingMarkets.length);
         }
 
         return NextResponse.json(tournament, { status: 201 });
