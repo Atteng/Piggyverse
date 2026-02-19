@@ -101,10 +101,10 @@ export function GameEditModal({ isOpen, onClose, game }: GameEditModalProps) {
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="bg-black/60 backdrop-blur-3xl border-white/10 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="bg-black/60 backdrop-blur-3xl border-white/10 text-white w-[95vw] max-w-2xl rounded-[var(--radius-piggy-modal)] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle className="text-2xl font-black font-mono uppercase tracking-tighter">Edit Game</DialogTitle>
-                    <DialogDescription className="text-gray-400 font-mono">
+                    <DialogTitle className="text-piggy-title font-black tracking-tighter">Edit Game</DialogTitle>
+                    <DialogDescription className="text-gray-400 text-piggy-label font-medium uppercase tracking-tight">
                         Update the details for your game listing.
                     </DialogDescription>
                 </DialogHeader>
@@ -116,7 +116,7 @@ export function GameEditModal({ isOpen, onClose, game }: GameEditModalProps) {
                             name="title"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel className="text-sm font-bold uppercase tracking-wider text-gray-400">Game Title</FormLabel>
+                                    <FormLabel className="text-piggy-label font-bold uppercase tracking-tight text-gray-400">Game Title</FormLabel>
                                     <FormControl>
                                         <Input {...field} className="bg-black/60 border-white/10 text-white focus:border-[var(--color-piggy-deep-pink)] transition-colors" />
                                     </FormControl>
@@ -130,7 +130,7 @@ export function GameEditModal({ isOpen, onClose, game }: GameEditModalProps) {
                             name="description"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel className="text-sm font-bold uppercase tracking-wider text-gray-400">Description</FormLabel>
+                                    <FormLabel className="text-piggy-label font-bold uppercase tracking-tight text-gray-400">Description</FormLabel>
                                     <FormControl>
                                         <Textarea {...field} className="bg-black/20 border-white/10 text-white min-h-[100px] focus:border-[var(--color-piggy-deep-pink)] transition-colors" />
                                     </FormControl>
@@ -144,7 +144,7 @@ export function GameEditModal({ isOpen, onClose, game }: GameEditModalProps) {
                             name="thumbnailUrl"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel className="text-sm font-bold uppercase tracking-wider text-gray-400">Thumbnail Image</FormLabel>
+                                    <FormLabel className="text-piggy-label font-bold uppercase tracking-tight text-gray-400">Thumbnail Image</FormLabel>
                                     <FormControl>
                                         <ImageUpload
                                             value={field.value || ""}
@@ -161,7 +161,7 @@ export function GameEditModal({ isOpen, onClose, game }: GameEditModalProps) {
                             name="gameUrl"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel className="text-sm font-bold uppercase tracking-wider text-gray-400">Game URL (Where to play)</FormLabel>
+                                    <FormLabel className="text-piggy-label font-bold uppercase tracking-tight text-gray-400">Game URL (Where to play)</FormLabel>
                                     <FormControl>
                                         <Input {...field} placeholder="https://..." className="bg-black/60 border-white/10 text-white focus:border-[var(--color-piggy-deep-pink)] transition-colors" />
                                     </FormControl>
@@ -175,7 +175,7 @@ export function GameEditModal({ isOpen, onClose, game }: GameEditModalProps) {
                             name="categories"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel className="text-sm font-bold uppercase tracking-wider text-gray-400">Categories</FormLabel>
+                                    <FormLabel className="text-piggy-label font-bold uppercase tracking-tight text-gray-400">Categories</FormLabel>
                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-black/60 p-4 rounded-xl border border-white/5">
                                         {CATEGORIES.map((cat) => (
                                             <div key={cat} className="flex items-center space-x-2">
@@ -189,7 +189,7 @@ export function GameEditModal({ isOpen, onClose, game }: GameEditModalProps) {
                                                     }}
                                                     className="border-white/20 data-[state=checked]:bg-[var(--color-piggy-deep-pink)]"
                                                 />
-                                                <label htmlFor={`edit-cat-${cat}`} className="text-sm text-gray-300 cursor-pointer">{cat}</label>
+                                                <label htmlFor={`edit-cat-${cat}`} className="text-piggy-body text-gray-300 cursor-pointer">{cat}</label>
                                             </div>
                                         ))}
                                     </div>
@@ -203,7 +203,7 @@ export function GameEditModal({ isOpen, onClose, game }: GameEditModalProps) {
                             name="platforms"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel className="text-sm font-bold uppercase tracking-wider text-gray-400">Platforms</FormLabel>
+                                    <FormLabel className="text-piggy-label font-bold uppercase tracking-tight text-gray-400">Platforms</FormLabel>
                                     <div className="flex flex-wrap gap-6 bg-black/60 p-4 rounded-xl border border-white/5">
                                         {PLATFORMS.map((plat) => (
                                             <div key={plat} className="flex items-center space-x-2">
@@ -217,7 +217,7 @@ export function GameEditModal({ isOpen, onClose, game }: GameEditModalProps) {
                                                     }}
                                                     className="border-white/20 data-[state=checked]:bg-[var(--color-piggy-deep-pink)]"
                                                 />
-                                                <label htmlFor={`edit-plat-${plat}`} className="text-sm text-gray-300 cursor-pointer">{plat}</label>
+                                                <label htmlFor={`edit-plat-${plat}`} className="text-piggy-body text-gray-300 cursor-pointer">{plat}</label>
                                             </div>
                                         ))}
                                     </div>
@@ -232,8 +232,8 @@ export function GameEditModal({ isOpen, onClose, game }: GameEditModalProps) {
                             render={({ field }) => (
                                 <FormItem className="flex flex-row items-center justify-between rounded-xl border border-white/10 p-4 bg-black/20">
                                     <div className="space-y-0.5">
-                                        <FormLabel className="text-base font-bold text-white">Public Visibility</FormLabel>
-                                        <FormDescription className="text-gray-400 text-xs">
+                                        <FormLabel className="text-piggy-body font-bold text-white">Public Visibility</FormLabel>
+                                        <FormDescription className="text-gray-400 text-piggy-label">
                                             If disabled, the game will be hidden from the library.
                                         </FormDescription>
                                     </div>
@@ -262,7 +262,7 @@ export function GameEditModal({ isOpen, onClose, game }: GameEditModalProps) {
                             ) : (
                                 <div className="flex items-center gap-3 bg-red-500/10 p-2 rounded-lg border border-red-500/20">
                                     <AlertTriangle className="w-4 h-4 text-red-500" />
-                                    <span className="text-xs text-red-400 font-bold">Confirm Delete?</span>
+                                    <span className="text-piggy-label text-red-400 font-bold">Confirm Delete?</span>
                                     <Button
                                         type="button"
                                         variant="destructive"

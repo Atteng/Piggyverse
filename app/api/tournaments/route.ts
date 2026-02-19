@@ -70,6 +70,14 @@ export async function GET(request: NextRequest) {
                             marketType: true,
                             totalPool: true,
                             status: true,
+                            marketQuestion: true, // Also nice to have
+                            outcomes: {
+                                select: {
+                                    id: true,
+                                    label: true,
+                                    weight: true
+                                }
+                            }
                         },
                     },
                 },
@@ -80,8 +88,31 @@ export async function GET(request: NextRequest) {
             prisma.tournament.count({ where }),
         ]);
 
+        // -----------------------------------------------------------------------
+        // --- ODDS CALCULATION: Compute live odds for betting markets ---
+        const { calculateOdds } = await import('@/lib/betting');
+
+        const tournamentsWithLivePool = tournaments.map(t => {
+            const prizePoolAmount = (t.prizePoolSeed || 0) + (t.registeredPlayers * (t.entryFeeAmount || 0));
+
+            // Enhance betting markets with calculated odds
+            const bettingMarkets = t.bettingMarkets.map((m: any) => {
+                const outcomes = m.outcomes.map((o: any) => ({
+                    ...o,
+                    currentOdds: calculateOdds(m.marketType, m.totalPool, o.weight, m.outcomes)
+                }));
+                return { ...m, outcomes };
+            });
+
+            return {
+                ...t,
+                prizePoolAmount,
+                bettingMarkets
+            };
+        });
+
         return NextResponse.json({
-            tournaments,
+            tournaments: tournamentsWithLivePool,
             pagination: {
                 page,
                 limit,

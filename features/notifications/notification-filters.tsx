@@ -38,7 +38,7 @@ export function NotificationFilters({ filter, onFilterChange }: NotificationFilt
                             <SelectItem
                                 key={item.id}
                                 value={item.id}
-                                className="focus:bg-white/10 focus:text-white cursor-pointer py-3 font-mono text-xs uppercase tracking-wider text-white hover:text-white hover:bg-white/5"
+                                className="focus:bg-white/10 focus:text-white cursor-pointer py-3 font-mono text-xs uppercase tracking-tight text-white hover:text-white hover:bg-white/5"
                             >
                                 {item.label}
                             </SelectItem>

@@ -129,10 +129,10 @@ export function StatsGrid() {
                                 <div className="relative z-10">
                                     <div className="flex items-center gap-3 mb-2">
                                         <Icon className="w-5 h-5 text-white" />
-                                        <p className="text-sm text-white/60">{score.label}</p>
+                                        <p className="text-piggy-label text-white/60">{score.label}</p>
                                     </div>
-                                    <p className="text-3xl font-black text-white mb-1">{score.value}</p>
-                                    <p className="text-xs text-white/40">{score.desc}</p>
+                                    <p className="text-piggy-title font-black text-white mb-1">{score.value}</p>
+                                    <p className="text-piggy-label text-white/40">{score.desc}</p>
                                 </div>
                             </div>
                         );
@@ -142,7 +142,7 @@ export function StatsGrid() {
 
             {/* Detailed Stats Section */}
             <div>
-                <h3 className="text-xl font-bold text-white mb-4">Activity Stats</h3>
+                <h3 className="text-piggy-title font-bold text-white mb-4">Activity Stats</h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                     {stats.map((stat) => {
                         const Icon = stat.icon;
@@ -151,8 +151,8 @@ export function StatsGrid() {
                                 <div className="p-2 rounded-lg bg-white/5 border border-white/10 mb-2">
                                     <Icon className="w-4 h-4 text-white" />
                                 </div>
-                                <p className="text-lg font-bold text-white mb-1">{stat.value}</p>
-                                <p className="text-[10px] text-white/50 uppercase tracking-wider">{stat.label}</p>
+                                <p className="text-piggy-body font-bold text-white mb-1">{stat.value}</p>
+                                <p className="text-piggy-label text-white/50 uppercase tracking-tight">{stat.label}</p>
                             </div>
                         );
                     })}

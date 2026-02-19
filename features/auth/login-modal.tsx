@@ -29,13 +29,13 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent
                 showCloseButton={false}
-                className="w-[calc(100%-4rem)] max-w-[340px] sm:max-w-md bg-black/60 border-white/5 text-white backdrop-blur-3xl rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8"
+                className="w-[95vw] max-w-[340px] sm:max-w-md bg-black/60 border-white/5 text-white backdrop-blur-3xl rounded-[var(--radius-piggy-modal)] p-6 md:p-8"
             >
                 <DialogHeader className="space-y-1 mt-4">
-                    <DialogTitle className="text-2xl md:text-3xl font-black text-center font-mono tracking-tighter leading-[0.8] mb-1">
+                    <DialogTitle className="text-piggy-title font-black text-center font-mono tracking-tighter leading-[0.8] mb-1">
                         Welcome to <span className="text-[var(--color-piggy-deep-pink)]">PiggyVerse</span>
                     </DialogTitle>
-                    <DialogDescription className="text-center text-white/40 font-medium text-sm leading-tight">
+                    <DialogDescription className="text-center text-white/40 font-medium text-piggy-body leading-tight">
                         Connect your account to compete, bet, and earn.
                     </DialogDescription>
                 </DialogHeader>
@@ -74,7 +74,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                     </Button>
                 </div>
 
-                <div className="text-center text-[10px] text-white/20 font-mono px-4 leading-tight">
+                <div className="text-center text-piggy-tiny text-white/20 font-mono px-4 leading-tight">
                     By connecting, you agree to our Terms of Service and Privacy Policy.
                 </div>
             </DialogContent>

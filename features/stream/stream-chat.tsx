@@ -63,15 +63,15 @@ export function StreamChat({ streamId }: StreamChatProps) {
             <div className="p-4 border-b border-white/10 flex-shrink-0">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h3 className="text-base font-bold text-white font-mono">Live Chat</h3>
-                        <p className="text-xs text-gray-400 font-mono mt-0.5">
+                        <h3 className="text-piggy-body font-bold text-white font-mono">Live Chat</h3>
+                        <p className="text-piggy-label text-gray-400 font-mono mt-0.5">
                             {streamId ? `${messages.length} messages` : "Connecting..."}
                         </p>
                     </div>
                     {/* Connection indicator */}
                     <div className="flex items-center gap-1.5">
                         <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-gray-500'}`} />
-                        <span className="text-[10px] text-gray-400 font-mono">
+                        <span className="text-piggy-tiny text-gray-400 font-mono">
                             {isConnected ? 'Live' : 'Offline'}
                         </span>
                     </div>
@@ -85,7 +85,7 @@ export function StreamChat({ streamId }: StreamChatProps) {
                         <div key={msg.id} className="group animate-in fade-in slide-in-from-bottom-2 duration-200">
                             <div className="flex items-start gap-2">
                                 <div
-                                    className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 font-bold text-[10px] text-white uppercase"
+                                    className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 font-bold text-piggy-tiny text-white uppercase"
                                     style={{ backgroundColor: getUsernameColor(msg.username) }}
                                 >
                                     {msg.username[0]}
@@ -93,16 +93,16 @@ export function StreamChat({ streamId }: StreamChatProps) {
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-baseline gap-1.5 mb-0.5">
                                         <span
-                                            className="font-bold text-xs font-mono"
+                                            className="font-bold text-piggy-label font-mono"
                                             style={{ color: getUsernameColor(msg.username) }}
                                         >
                                             {msg.username}
                                         </span>
-                                        <span className="text-[10px] text-gray-500 font-mono">
+                                        <span className="text-piggy-tiny text-gray-500 font-mono">
                                             {formatTime(msg.createdAt)}
                                         </span>
                                     </div>
-                                    <p className="text-white text-xs break-words">{msg.message}</p>
+                                    <p className="text-white text-piggy-body break-words">{msg.message}</p>
                                 </div>
                             </div>
                         </div>
@@ -121,7 +121,7 @@ export function StreamChat({ streamId }: StreamChatProps) {
                             onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
                             placeholder={session ? "Send a message..." : "Sign in to chat"}
                             disabled={!session || !streamId || isSending}
-                            className="bg-white/5 border-white/10 text-white text-xs placeholder:text-gray-500 pr-8 rounded-full h-9 font-mono disabled:opacity-50"
+                            className="bg-white/5 border-white/10 text-white text-piggy-body placeholder:text-gray-500 pr-8 rounded-full h-9 font-mono disabled:opacity-50"
                         />
                         <Button
                             variant="ghost"

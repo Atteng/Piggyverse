@@ -37,6 +37,7 @@ export function BetPlacementModal({
     token = "USDC"
 }: BetPlacementModalProps) {
     const [amount, setAmount] = useState<string>("");
+    const [slippage, setSlippage] = useState<number>(5);
     const [step, setStep] = useState<"input" | "confirm" | "success">("input");
     const [placedBetData, setPlacedBetData] = useState<any>(null);
     const { toast } = useToast();
@@ -51,13 +52,15 @@ export function BetPlacementModal({
 
     const betAmount = parseFloat(amount) || 0;
     const potentialPayout = betAmount * currentOdds;
+    const minOdds = currentOdds * (1 - slippage / 100);
 
     const placeBetMutation = useMutation({
         mutationFn: () => placeBet({
             marketId,
             outcomeId,
             amount: betAmount,
-            token
+            token,
+            minOdds
         }),
         onSuccess: (data) => {
             setPlacedBetData(data);
@@ -90,32 +93,32 @@ export function BetPlacementModal({
                 reset();
             }
         }}>
-            <DialogContent className="bg-[#1a1a1a] border border-white/10 text-white sm:max-w-md">
-                <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2 text-xl font-bold font-mono">
-                        <Coins className="text-[var(--color-piggy-deep-pink)]" />
+            <DialogContent className="bg-black/60 backdrop-blur-3xl border border-white/10 text-white w-[95vw] max-w-md rounded-[var(--radius-piggy-modal)] gap-0">
+                <DialogHeader className="pt-8 px-6">
+                    <DialogTitle className="flex items-center gap-2 text-piggy-title font-black tracking-tighter">
+                        <Coins className="text-[var(--color-piggy-deep-pink)] w-5 h-5 sm:w-6 sm:h-6" />
                         Place Bet
                     </DialogTitle>
-                    <DialogDescription className="text-gray-400">
+                    <DialogDescription className="text-gray-400 text-piggy-label font-medium uppercase tracking-tight">
                         {tournamentName}
                     </DialogDescription>
                 </DialogHeader>
 
                 {step === "input" && (
-                    <div className="space-y-6 py-4">
+                    <div className="space-y-6 p-6">
                         <div className="bg-black/30 p-4 rounded-xl border border-white/5 space-y-2">
-                            <div className="flex justify-between text-sm">
+                            <div className="flex justify-between text-piggy-body">
                                 <span className="text-gray-400">Betting On</span>
                                 <span className="font-bold text-white">{outcomeName}</span>
                             </div>
-                            <div className="flex justify-between text-sm">
+                            <div className="flex justify-between text-piggy-body">
                                 <span className="text-gray-400">Current Odds</span>
                                 <span className="font-bold text-[var(--color-piggy-super-green)] font-mono">x{currentOdds.toFixed(2)}</span>
                             </div>
                         </div>
 
                         <div className="space-y-2">
-                            <div className="flex justify-between text-xs text-gray-400">
+                            <div className="flex justify-between text-piggy-label text-gray-400">
                                 <span>Wager Amount</span>
                                 {minBet > 0 && <span>Min: {minBet} {token}</span>}
                             </div>
@@ -129,16 +132,35 @@ export function BetPlacementModal({
                                     min={minBet}
                                     max={maxBet}
                                 />
-                                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold bg-white/10 px-2 py-1 rounded">
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-piggy-tiny font-bold bg-white/10 px-2 py-1 rounded">
                                     {token}
                                 </div>
+                            </div>
+                        </div>
+
+                        {/* Slippage Tolerance */}
+                        <div className="flex justify-between items-center text-piggy-label">
+                            <span className="text-gray-400">Slippage Tolerance</span>
+                            <div className="flex gap-2">
+                                {[1, 5, 10].map((val) => (
+                                    <button
+                                        key={val}
+                                        onClick={() => setSlippage(val)}
+                                        className={`px-2 py-1 rounded border transition-colors ${slippage === val
+                                            ? "bg-[var(--color-piggy-deep-pink)]/20 border-[var(--color-piggy-deep-pink)] text-[var(--color-piggy-deep-pink)]"
+                                            : "bg-black/40 border-white/10 text-gray-400 hover:text-white"
+                                            }`}
+                                    >
+                                        {val}%
+                                    </button>
+                                ))}
                             </div>
                         </div>
 
                         {betAmount > 0 && (
                             <div className="bg-[var(--color-piggy-super-green)]/10 border border-[var(--color-piggy-super-green)]/20 p-4 rounded-xl">
                                 <div className="flex justify-between items-center">
-                                    <span className="text-[var(--color-piggy-super-green)] text-sm flex items-center gap-2">
+                                    <span className="text-[var(--color-piggy-super-green)] text-piggy-label flex items-center gap-2">
                                         <TrendingUp className="w-4 h-4" /> Potential Payout
                                     </span>
                                     <span className="text-xl font-black text-white font-mono">
@@ -150,71 +172,75 @@ export function BetPlacementModal({
                     </div>
                 )}
 
-                {step === "confirm" && (
-                    <div className="space-y-6 py-4">
-                        <div className="text-center space-y-2">
-                            <AlertCircle className="w-12 h-12 text-[var(--color-piggy-deep-pink)] mx-auto" />
-                            <h3 className="text-lg font-bold">Confirm Your Bet</h3>
-                            <p className="text-sm text-gray-400 px-6">
-                                You are betting <strong>{amount} {token}</strong> on <strong>{outcomeName}</strong> at <strong>x{currentOdds.toFixed(2)}</strong> odds.
-                            </p>
-                        </div>
-
-                        <div className="bg-white/5 p-4 rounded-xl space-y-2 text-sm">
-                            <div className="flex justify-between">
-                                <span className="text-gray-400">Total Wager</span>
-                                <span className="text-white font-bold">{amount} {token}</span>
+                {
+                    step === "confirm" && (
+                        <div className="space-y-6 p-6">
+                            <div className="text-center space-y-2">
+                                <AlertCircle className="w-12 h-12 text-[var(--color-piggy-deep-pink)] mx-auto" />
+                                <h3 className="text-lg font-bold">Confirm Your Bet</h3>
+                                <p className="text-piggy-body text-gray-400 px-6">
+                                    You are betting <strong>{amount} {token}</strong> on <strong>{outcomeName}</strong> at <strong>x{currentOdds.toFixed(2)}</strong> odds.
+                                </p>
                             </div>
-                            <div className="flex justify-between">
-                                <span className="text-gray-400">Potential Return</span>
-                                <span className="text-[var(--color-piggy-super-green)] font-bold">+{(potentialPayout - betAmount).toFixed(2)} {token}</span>
-                            </div>
-                        </div>
-                    </div>
-                )}
 
-                {step === "success" && (
-                    <div className="space-y-6 py-8 text-center animate-in zoom-in-95 duration-300">
-                        <div className="w-16 h-16 bg-[var(--color-piggy-super-green)]/20 rounded-full flex items-center justify-center mx-auto">
-                            <CheckCircle2 className="w-8 h-8 text-[var(--color-piggy-super-green)]" />
-                        </div>
-                        <div>
-                            <h3 className="text-2xl font-bold text-white mb-2">Bet Placed!</h3>
-                            <p className="text-gray-400 mb-6">Good luck! You can track this bet in your profile.</p>
-
-                            {placedBetData && (
-                                <div className="space-y-3 px-8">
-                                    <DownloadBetSlipButton
-                                        betData={{
-                                            id: placedBetData.id,
-                                            bookingCode: placedBetData.bookingCode || "PENDING",
-                                            placedAt: new Date().toLocaleDateString("en-GB", {
-                                                day: "2-digit",
-                                                month: "2-digit",
-                                                year: "numeric",
-                                                hour: "2-digit",
-                                                minute: "2-digit"
-                                            }),
-                                            items: [{
-                                                selection: outcomeName,
-                                                gameTitle: tournamentName,
-                                                participants: "Tournament Bet", // Simplification
-                                                question: `Bet on ${outcomeName}`,
-                                                amount: parseFloat(amount),
-                                                token: token,
-                                                odds: currentOdds,
-                                                payout: potentialPayout
-                                            }]
-                                        }}
-                                    />
-                                    <p className="text-[10px] text-gray-500">
-                                        Save or share your betting slip on social media.
-                                    </p>
+                            <div className="bg-white/5 p-4 rounded-xl space-y-2 text-piggy-body">
+                                <div className="flex justify-between">
+                                    <span className="text-gray-400">Total Wager</span>
+                                    <span className="text-white font-bold">{amount} {token}</span>
                                 </div>
-                            )}
+                                <div className="flex justify-between">
+                                    <span className="text-gray-400">Potential Return</span>
+                                    <span className="text-[var(--color-piggy-super-green)] font-bold">+{(potentialPayout - betAmount).toFixed(2)} {token}</span>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )
+                }
+
+                {
+                    step === "success" && (
+                        <div className="space-y-6 py-8 text-center animate-in zoom-in-95 duration-300">
+                            <div className="w-16 h-16 bg-[var(--color-piggy-super-green)]/20 rounded-full flex items-center justify-center mx-auto">
+                                <CheckCircle2 className="w-8 h-8 text-[var(--color-piggy-super-green)]" />
+                            </div>
+                            <div>
+                                <h3 className="text-piggy-title font-bold text-white mb-2">Bet Placed!</h3>
+                                <p className="text-piggy-body text-gray-400 mb-6">Good luck! You can track this bet in your profile.</p>
+
+                                {placedBetData && (
+                                    <div className="space-y-3 px-8">
+                                        <DownloadBetSlipButton
+                                            betData={{
+                                                id: placedBetData.id,
+                                                bookingCode: placedBetData.bookingCode || "PENDING",
+                                                placedAt: new Date().toLocaleDateString("en-GB", {
+                                                    day: "2-digit",
+                                                    month: "2-digit",
+                                                    year: "numeric",
+                                                    hour: "2-digit",
+                                                    minute: "2-digit"
+                                                }),
+                                                items: [{
+                                                    selection: outcomeName,
+                                                    gameTitle: tournamentName,
+                                                    participants: "Tournament Bet", // Simplification
+                                                    question: `Bet on ${outcomeName}`,
+                                                    amount: parseFloat(amount),
+                                                    token: token,
+                                                    odds: currentOdds,
+                                                    payout: potentialPayout
+                                                }]
+                                            }}
+                                        />
+                                        <p className="text-piggy-tiny text-gray-500">
+                                            Save or share your betting slip on social media.
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )
+                }
 
                 <DialogFooter className="gap-2 sm:gap-0">
                     {step === "input" && (
@@ -249,7 +275,7 @@ export function BetPlacementModal({
                         </Button>
                     )}
                 </DialogFooter>
-            </DialogContent>
-        </Dialog>
+            </DialogContent >
+        </Dialog >
     );
 }

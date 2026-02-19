@@ -35,11 +35,37 @@ export function BetSlipTemplate({ bookingCode, timestamp, items }: BetSlipTempla
                 display: 'flex',
                 flexDirection: 'column',
                 width: '600px',
-                minHeight: '800px',
                 backgroundColor: COLORS.background,
                 color: COLORS.textDark,
-                fontFamily: 'sans-serif',
-            }}
+                fontFamily: 'var(--font-jetbrains-mono), monospace',
+                // Localized HEX overrides to prevent html2canvas oklch/lab crash
+                '--background': '#ffe0eb',
+                '--foreground': '#1a1a1a',
+                '--card': '#ffe0eb',
+                '--card-foreground': '#1a1a1a',
+                '--popover': '#ffe0eb',
+                '--popover-foreground': '#1a1a1a',
+                '--primary': '#ff2f7a',
+                '--primary-foreground': '#ffffff',
+                '--secondary': '#ffe0eb',
+                '--secondary-foreground': '#1a1a1a',
+                '--muted': '#ffe0eb',
+                '--muted-foreground': '#666666',
+                '--accent': '#ffe0eb',
+                '--accent-foreground': '#1a1a1a',
+                '--destructive': '#ff2f7a',
+                '--border': '#ff2f7a',
+                '--input': '#ff2f7a',
+                '--ring': 'transparent',
+                '--chart-1': '#ff2f7a',
+                '--chart-2': '#fb6cc8',
+                '--chart-3': '#231613',
+                '--chart-4': '#9ce500',
+                '--chart-5': '#8cbc75',
+                borderColor: 'transparent',
+                outlineColor: 'transparent',
+            } as any}
+            data-slip-root
         >
             {/* Header */}
             <div
@@ -47,135 +73,175 @@ export function BetSlipTemplate({ bookingCode, timestamp, items }: BetSlipTempla
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    padding: '20px 30px',
+                    padding: '20px 40px',
                     backgroundColor: COLORS.darkPink,
                     color: 'white',
                 }}
             >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                     <div
                         style={{
-                            width: '40px',
-                            height: '40px',
+                            width: '50px',
+                            height: '50px',
                             backgroundColor: 'white',
-                            borderRadius: '20px',
+                            borderRadius: '50%',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
+                            overflow: 'hidden'
                         }}
                     >
-                        {/* Minimal Piggy Logo Placeholder */}
-                        <div style={{ color: COLORS.darkPink, fontSize: '20px', fontWeight: 'bold' }}>P</div>
+                        <img src="/logo.png" style={{ width: '35px', height: '35px', objectFit: 'contain' }} alt="Logo" />
                     </div>
-                    <span style={{ fontSize: '28px', fontWeight: 'bold' }}>Verse</span>
+                    <span style={{ fontSize: '24px', fontWeight: '900', letterSpacing: '-0.05em', fontFamily: 'var(--font-geist-sans), sans-serif' }}>Verse</span>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                    <span style={{ fontSize: '24px', fontWeight: 'bold' }}>Betslip</span>
-                    <span style={{ fontSize: '12px', opacity: 0.8 }}>{timestamp}</span>
+                    <span style={{ fontSize: '24px', fontWeight: '900', lineHeight: 1, fontFamily: 'var(--font-geist-sans), sans-serif' }}>Betslip</span>
+                    <span style={{ fontSize: '12px', fontWeight: 'bold', marginTop: '4px', opacity: 0.7, lineHeight: '1.2' }}>{timestamp}</span>
                 </div>
             </div>
 
-            {/* Booking Code Section */}
+            {/* Branding Section */}
             <div
                 style={{
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
                     padding: '40px 20px 20px',
+                    textAlign: 'center'
                 }}
             >
-                <span style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '5px' }}>Game Title</span>
-                <span style={{ fontSize: '42px', fontWeight: '900', color: COLORS.darkPink, marginBottom: '20px' }}>
-                    {items[0]?.gameTitle || 'Tournament'}
+                <span style={{ fontSize: '12px', fontWeight: 'bold', color: COLORS.textDark, textTransform: 'capitalize', marginBottom: '2px', opacity: 0.7, lineHeight: '1.2' }}>Game Title</span>
+                <span style={{ fontSize: '36px', fontWeight: '900', color: COLORS.darkPink, marginBottom: '25px', letterSpacing: '-0.03em', lineHeight: 1, fontFamily: 'var(--font-geist-sans), sans-serif' }}>
+                    {items[0]?.gameTitle || 'PokerNow'}
                 </span>
 
-                <span style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '5px' }}>Booking Code</span>
-                <span style={{ fontSize: '48px', fontWeight: '900', color: COLORS.darkPink, marginBottom: '5px' }}>
+                <span style={{ fontSize: '12px', fontWeight: 'bold', color: COLORS.textDark, textTransform: 'capitalize', marginBottom: '2px', opacity: 0.7, lineHeight: '1.2' }}>Booking Code</span>
+                <span style={{ fontSize: '36px', fontWeight: '900', color: COLORS.darkPink, marginBottom: '25px', letterSpacing: '0.05em', lineHeight: 1, fontFamily: 'var(--font-geist-sans), sans-serif' }}>
                     {bookingCode}
                 </span>
-                <span style={{ fontSize: '12px', color: COLORS.textGray }}>
-                    Simply follow my betslip by inputting this code
+
+                <span style={{ fontSize: '12px', fontWeight: 'bold', color: COLORS.textDark, textTransform: 'capitalize', marginBottom: '2px', opacity: 0.7, lineHeight: '1.2' }}>Total Potential Payout</span>
+                <span style={{ fontSize: '36px', fontWeight: '900', color: COLORS.darkPink, marginBottom: '8px', letterSpacing: '-0.02em', lineHeight: 1, fontFamily: 'var(--font-geist-sans), sans-serif' }}>
+                    {items.reduce((sum, item) => sum + item.payout, 0).toFixed(2)} ${items[0]?.token}
                 </span>
+
             </div>
 
             {/* Bet Items */}
-            <div style={{ display: 'flex', flexDirection: 'column', padding: '20px 30px', gap: '20px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', padding: '10px 40px', gap: '12px' }}>
                 {items.map((item, index) => (
-                    <div key={index} style={{ display: 'flex', flexDirection: 'column', position: 'relative' }}>
-                        {/* Top Row */}
+                    <div key={index} style={{ display: 'flex', flexDirection: 'column' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                <span style={{ fontSize: '24px' }}>♠</span>
-                                <span style={{ fontSize: '28px', fontWeight: 'bold' }}>{item.selection}</span>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, marginRight: '20px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                                    <span style={{ fontSize: '24px', color: COLORS.darkPink }}>♠</span>
+                                    <span style={{ fontSize: '24px', fontWeight: '900', color: COLORS.darkPink, fontFamily: 'var(--font-jetbrains-mono), monospace', lineHeight: 1 }}>{item.selection}</span>
+                                </div>
+                                <div style={{ fontSize: '24px', fontWeight: '500', color: COLORS.textDark, opacity: 0.85, letterSpacing: '-0.02em', lineHeight: 1, fontFamily: 'var(--font-jetbrains-mono), monospace' }}>
+                                    {item.question}
+                                </div>
                             </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                                <span style={{ fontSize: '32px', fontWeight: '900' }}>{item.amount} ${item.token}</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <div style={{
+                                    backgroundColor: COLORS.darkPink,
+                                    padding: '4px 8px',
+                                    borderRadius: '6px',
+                                    color: COLORS.lightPink,
+                                    fontSize: '12px',
+                                    fontWeight: '900',
+                                    fontFamily: 'var(--font-jetbrains-mono), monospace',
+                                    lineHeight: 1
+                                }}>
+                                    Odds: {item.odds.toFixed(2)}
+                                </div>
+                                <div style={{
+                                    backgroundColor: COLORS.darkPink,
+                                    padding: '4px 12px',
+                                    borderRadius: '6px',
+                                    fontSize: '12px',
+                                    fontWeight: '900',
+                                    fontFamily: 'var(--font-jetbrains-mono), monospace',
+                                    color: COLORS.lightPink,
+                                    lineHeight: 1
+                                }}>
+                                    {item.amount} ${item.token}
+                                </div>
                             </div>
                         </div>
 
-                        {/* Middle Row */}
-                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <div style={{ fontSize: '11px', color: COLORS.textGray, maxWidth: '300px', lineHeight: '1.2' }}>
+                        <div style={{ marginTop: '12px' }}>
+                            <div style={{ fontSize: '12px', fontWeight: 'bold', color: COLORS.textDark, opacity: 0.7, width: '100%', lineHeight: '1.2' }}>
                                 {item.participants}
                             </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', fontSize: '14px' }}>
-                                <span>Odds: {item.odds.toFixed(2)}</span>
-                                <span style={{ fontWeight: 'bold' }}>Payout: {item.payout} ${item.token}</span>
-                            </div>
                         </div>
 
-                        {/* Bottom Row */}
-                        <div style={{ fontSize: '32px', fontWeight: 'bold', marginTop: '10px' }}>
-                            {item.question}
+                        <div style={{
+                            marginTop: '8px',
+                            backgroundColor: COLORS.darkPink,
+                            padding: '8px 16px',
+                            borderRadius: '10px',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            color: COLORS.lightPink,
+                            fontFamily: 'var(--font-jetbrains-mono), monospace'
+                        }}>
+                            <span style={{ fontSize: '12px', fontWeight: 'bold', opacity: 0.9 }}>Potential Payout</span>
+                            <span style={{ fontSize: '14px', fontWeight: '900' }}>{item.payout.toFixed(2)} ${item.token}</span>
                         </div>
 
-                        {/* Divider */}
                         <div
                             style={{
-                                height: '1px',
-                                backgroundColor: COLORS.textDark,
-                                opacity: 0.1,
-                                marginTop: '15px',
+                                height: '2px',
+                                backgroundColor: '#000000',
+                                opacity: 0.2,
+                                marginTop: '12px',
                             }}
                         />
                     </div>
                 ))}
             </div>
 
-            {/* Footer */}
+            {/* Disclaimer */}
             <div
                 style={{
-                    marginTop: 'auto',
-                    padding: '20px 40px',
+                    padding: '10px 40px 20px 40px',
                     display: 'flex',
-                    flexDirection: 'column',
+                    flexDirection: 'row',
                     alignItems: 'center',
-                    textAlign: 'center',
+                    gap: '12px',
+                    textAlign: 'left',
                 }}
             >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: COLORS.darkPink, marginBottom: '5px' }}>
-                    <div
-                        style={{
-                            width: '16px',
-                            height: '16px',
-                            borderRadius: '8px',
-                            backgroundColor: COLORS.darkPink,
-                            color: 'white',
-                            fontSize: '10px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontWeight: 'bold',
-                        }}
-                    >
-                        !
-                    </div>
-                    <span style={{ fontSize: '10px', color: COLORS.textDark, fontWeight: 'bold', maxWidth: '400px', lineHeight: '1.4' }}>
-                        Projected payouts are calculated based on current pool liquidity and will fluctuate as bets are placed.
-                        Final odds and payouts are determined only at market settlement.
-                    </span>
+                <div
+                    style={{
+                        width: '20px',
+                        height: '20px',
+                        borderRadius: '10px',
+                        backgroundColor: COLORS.darkPink,
+                        color: 'white',
+                        fontSize: '12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontWeight: 'bold',
+                        flexShrink: 0
+                    }}
+                >
+                    i
                 </div>
+                <span style={{ fontSize: '12px', color: COLORS.textDark, fontWeight: 'bold', lineHeight: '1.2', opacity: 0.7 }}>
+                    Projected payouts are calculated based on current pool liquidity and will fluctuate as bets are placed.
+                    Final odds and payouts are determined only at market settlement.
+                </span>
             </div>
-        </div>
+
+            <div style={{ padding: '0 40px 30px', textAlign: 'center' }}>
+                <span style={{ fontSize: '12px', fontWeight: 'bold', color: COLORS.textDark, opacity: 0.7, lineHeight: '1.2' }}>
+                    Simply recreate this betslip by using my booking code
+                </span>
+            </div>
+        </div >
     );
 }

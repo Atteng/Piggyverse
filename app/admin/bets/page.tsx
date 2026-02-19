@@ -31,7 +31,7 @@ function AdminBetsContent() {
                             Back to Hub
                         </Button>
                     </Link>
-                    <h1 className="text-3xl font-black text-white font-mono tracking-tighter">
+                    <h1 className="text-piggy-title font-black text-white font-mono tracking-tighter">
                         Admin: Active Bets
                     </h1>
                 </div>
@@ -43,8 +43,8 @@ function AdminBetsContent() {
                 </div>
             ) : (
                 <div className="bg-black/40 border border-white/10 rounded-3xl overflow-hidden">
-                    <table className="w-full text-left text-sm text-gray-400">
-                        <thead className="bg-white/5 text-white uppercase font-mono text-xs">
+                    <table className="w-full text-left text-piggy-body text-gray-400">
+                        <thead className="bg-white/5 text-white uppercase font-mono text-piggy-label">
                             <tr>
                                 <th className="px-6 py-4">User</th>
                                 <th className="px-6 py-4">Tournament / Market</th>
@@ -69,7 +69,7 @@ function AdminBetsContent() {
                                     <td className="px-6 py-4">
                                         <div className="flex flex-col">
                                             <span className="text-white font-medium">{bet.market.tournament.title}</span>
-                                            <span className="text-xs text-gray-500">{bet.market.question}</span>
+                                            <span className="text-piggy-label text-gray-500">{bet.market.question}</span>
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 font-mono font-bold text-white">
@@ -88,7 +88,7 @@ function AdminBetsContent() {
                                             {bet.status}
                                         </Badge>
                                     </td>
-                                    <td className="px-6 py-4 font-mono text-xs">
+                                    <td className="px-6 py-4 font-mono text-piggy-label">
                                         {new Date(bet.createdAt).toLocaleDateString()}
                                     </td>
                                 </tr>

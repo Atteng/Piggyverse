@@ -24,7 +24,7 @@ export default function MyBetsPage() {
                         Back
                     </Button>
                 </Link>
-                <h1 className="text-3xl font-black text-white font-mono tracking-tighter">
+                <h1 className="text-piggy-title font-black text-white font-mono tracking-tighter">
                     My Betting History
                 </h1>
             </div>
@@ -48,7 +48,7 @@ export default function MyBetsPage() {
                         <div key={bet.id} className="bg-black/40 border border-white/10 rounded-xl p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:border-white/20 transition-all">
                             <div className="space-y-1">
                                 <div className="flex items-center gap-2">
-                                    <h3 className="text-white font-bold text-lg">
+                                    <h3 className="text-white font-bold text-piggy-body">
                                         {bet.market.question}
                                     </h3>
                                     <Badge variant="outline" className={`
@@ -60,10 +60,10 @@ export default function MyBetsPage() {
                                         {bet.status}
                                     </Badge>
                                 </div>
-                                <p className="text-sm text-gray-400 font-mono">
+                                <p className="text-piggy-body text-gray-400 font-mono">
                                     Tournament: {bet.market.tournament.title}
                                 </p>
-                                <p className="text-xs text-gray-500">
+                                <p className="text-piggy-label text-gray-500 uppercase font-mono">
                                     Placed {formatDistanceToNow(new Date(bet.createdAt))} ago
                                 </p>
                             </div>
@@ -71,7 +71,7 @@ export default function MyBetsPage() {
                             <div className="flex items-center gap-8 bg-black/20 p-4 rounded-lg min-w-[200px] justify-between">
                                 <div>
                                     <p className="text-xs text-gray-500 uppercase font-mono">Wager</p>
-                                    <p className="text-white font-bold text-lg">{bet.amount} {bet.token}</p>
+                                    <p className="text-white font-bold text-piggy-title">{bet.amount} {bet.token}</p>
                                 </div>
                                 <div className="text-right">
                                     <p className="text-xs text-gray-500 uppercase font-mono">Outcome</p>

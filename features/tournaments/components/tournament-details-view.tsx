@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
-import { Trophy, Users, Clock, Calendar, Coins, ArrowLeft, Share2, Info, TrendingUp, Loader2, Shield, CheckCircle2, Plus, Wifi, XCircle, Gavel, FileSignature } from "lucide-react";
+import { Trophy, Users, Clock, Calendar, Coins, ArrowLeft, Share2, Info, TrendingUp, Loader2, Shield, CheckCircle2, Plus, Wifi, XCircle, Gavel, FileSignature, Sparkles, Check } from "lucide-react";
+import { useBettingCart } from "@/context/betting-cart-context";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -32,7 +33,6 @@ import {
 
 import { Settings, Trash2, Edit } from "lucide-react";
 import { useTournamentLeaderboard } from "@/hooks/use-tournament-leaderboard";
-import { BetPlacementModal } from "@/features/betting/components/bet-placement-modal";
 import { useToast } from "@/hooks/use-toast";
 import { PaymentDepositModal } from './payment-deposit-modal';
 import { MarketResolutionModal } from "./market-resolution-modal";
@@ -40,6 +40,11 @@ import { TournamentEditModal } from "./tournament-edit-modal";
 import { MarketEditModal } from "./market-edit-modal";
 import { SeedDepositModal } from "./seed-deposit-modal";
 import { MarketCreateModal } from "./market-create-modal";
+import { ProofOfSettlementModal } from "@/features/betting/components/proof-of-settlement-modal";
+import { BettingCartDrawer } from "@/features/betting/components/betting-cart-drawer";
+import { BettingCartFloatingButton } from "@/features/betting/components/betting-cart-floating-button";
+import { TreasuryPaymentModal } from "@/features/betting/components/treasury-payment-modal";
+import { ShieldCheck } from "lucide-react";
 import {
     Select,
     SelectContent,
@@ -67,10 +72,7 @@ export function TournamentDetailsView({ tournamentId }: TournamentDetailsViewPro
         toast = () => { };
     }
 
-    // Betting Modal State
-    const [selectedMarket, setSelectedMarket] = useState<any>(null);
-    const [selectedOutcome, setSelectedOutcome] = useState<any>(null);
-    const [isBetModalOpen, setIsBetModalOpen] = useState(false);
+    // Modals State
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -91,8 +93,17 @@ export function TournamentDetailsView({ tournamentId }: TournamentDetailsViewPro
     const [isMarketEditModalOpen, setIsMarketEditModalOpen] = useState(false);
     const [isMarketCreateModalOpen, setIsMarketCreateModalOpen] = useState(false);
 
+    // Proof of Settlement Modal State
+    const [proofMarket, setProofMarket] = useState<any>(null);
+    const [isProofModalOpen, setIsProofModalOpen] = useState(false);
+
+    // Betting Cart State
+    const [isCartOpen, setIsCartOpen] = useState(false);
+    const [isTreasuryModalOpen, setIsTreasuryModalOpen] = useState(false);
+
     // Tabs State
     const [activeTab, setActiveTab] = useState("overview");
+    const [marketTab, setMarketTab] = useState("binary");
 
     // Countdown Logic
     const [timeLeft, setTimeLeft] = useState<string>("");
@@ -153,6 +164,48 @@ export function TournamentDetailsView({ tournamentId }: TournamentDetailsViewPro
         }
     });
 
+    // Mutation: Approve AI Result
+    const approveMutation = useMutation({
+        mutationFn: async (marketId: string) => {
+            const res = await fetch(`/api/betting/markets/${marketId}/approve`, {
+                method: 'POST',
+            });
+            if (!res.ok) {
+                const error = await res.json();
+                throw new Error(error.error || 'Failed to approve');
+            }
+            return res.json();
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['tournament', tournamentId] });
+            toast({ title: "Market Settled", description: "AI result approved and bets paid out (ledger updated)." });
+        },
+        onError: (error: Error) => {
+            toast({ title: "Approval Failed", description: error.message, variant: "destructive" });
+        }
+    });
+
+    // Mutation: Reject AI Result
+    const rejectMutation = useMutation({
+        mutationFn: async (marketId: string) => {
+            const res = await fetch(`/api/betting/markets/${marketId}/reject`, {
+                method: 'POST',
+            });
+            if (!res.ok) {
+                const error = await res.json();
+                throw new Error(error.error || 'Failed to reject');
+            }
+            return res.json();
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['tournament', tournamentId] });
+            toast({ title: "Proposal Rejected", description: "Market is open for manual resolution or continued betting." });
+        },
+        onError: (error: Error) => {
+            toast({ title: "Rejection Failed", description: error.message, variant: "destructive" });
+        }
+    });
+
     // Mutation: Unregister
     const unregisterMutation = useMutation({
         mutationFn: () => unregisterFromTournament(tournamentId),
@@ -181,6 +234,27 @@ export function TournamentDetailsView({ tournamentId }: TournamentDetailsViewPro
                 description: error.message,
                 variant: "destructive"
             });
+        }
+    });
+
+    // Mutation: Resume Market (Anti-Sniping Override)
+    const resumeMarketMutation = useMutation({
+        mutationFn: async (marketId: string) => {
+            const res = await fetch(`/api/betting/markets/${marketId}/resume`, {
+                method: 'POST',
+            });
+            if (!res.ok) {
+                const error = await res.json();
+                throw new Error(error.error || 'Failed to resume');
+            }
+            return res.json();
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['tournament', tournamentId] });
+            toast({ title: "Market Resumed", description: "Betting is now open again." });
+        },
+        onError: (error: Error) => {
+            toast({ title: "Resume Failed", description: error.message, variant: "destructive" });
         }
     });
 
@@ -227,15 +301,30 @@ export function TournamentDetailsView({ tournamentId }: TournamentDetailsViewPro
         deleteMutation.mutate();
     };
 
+    const { isInSlip, addToSlip, removeFromSlip } = useBettingCart();
+
     const handleBetClick = (market: any, outcome: any) => {
-        if (market.status !== "ACTIVE") return; // Prevent betting on closed markets
+        if (market.status !== "OPEN") return;
         if (status !== "authenticated") {
             signIn();
             return;
         }
-        setSelectedMarket(market);
-        setSelectedOutcome(outcome);
-        setIsBetModalOpen(true);
+
+        if (isInSlip(outcome.id)) {
+            removeFromSlip(outcome.id);
+        } else {
+            addToSlip({
+                marketId: market.id,
+                outcomeId: outcome.id,
+                marketQuestion: market.marketQuestion,
+                outcomeLabel: outcome.label,
+                odds: outcome.currentOdds || outcome.weight || 1.0,
+                tournamentId: tournament.id,
+                tournamentName: tournament.name,
+                amount: 0, // Default amount
+                token: tournament.prizePoolToken || 'USDC'
+            });
+        }
     };
 
     const handleResolveClick = (market: any) => {
@@ -364,11 +453,11 @@ export function TournamentDetailsView({ tournamentId }: TournamentDetailsViewPro
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-end">
                         <div className="lg:col-span-2 space-y-4">
-                            <h1 className="text-4xl md:text-6xl font-black text-white font-mono tracking-tighter uppercase leading-none">
+                            <h1 className="text-piggy-hero md:text-[3rem] font-black text-white font-mono tracking-tighter uppercase leading-none">
                                 {tournament.name}
                             </h1>
 
-                            <p className="text-gray-300 text-sm max-w-2xl font-medium leading-snug">
+                            <p className="text-gray-300 text-piggy-body max-w-2xl font-medium leading-snug">
                                 {tournament.description}
                             </p>
 
@@ -382,7 +471,7 @@ export function TournamentDetailsView({ tournamentId }: TournamentDetailsViewPro
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                                                    <h3 className="text-white text-sm font-black uppercase tracking-tighter">
+                                                    <h3 className="text-white text-piggy-body font-black uppercase tracking-tighter">
                                                         Tournament Access
                                                     </h3>
                                                     {(tournament.inviteCodes?.[0]?.code || isHost) ? (
@@ -512,7 +601,7 @@ export function TournamentDetailsView({ tournamentId }: TournamentDetailsViewPro
                                     <div className="flex flex-col gap-1">
                                         <div className="flex items-center gap-1.5 text-white font-medium uppercase tracking-tighter bg-[var(--color-piggy-deep-pink)]/10 px-3 py-1 rounded-full border border-[var(--color-piggy-deep-pink)]/20 w-fit whitespace-nowrap">
                                             <Coins className="w-4 h-4 text-[var(--color-piggy-deep-pink)]" />
-                                            Prize Pool: {tournament.prizePoolAmount} {tournament.prizePoolToken}
+                                            Prize Pool: {tournament.prizePoolAmount} {tournament.prizePoolToken || tournament.entryFeeToken || "PIGGY"}
                                         </div>
                                         {isHost && (tournament as any).prizePoolSeed !== undefined && (
                                             <span className="text-[9px] text-gray-500 font-bold uppercase ml-2">
@@ -532,7 +621,7 @@ export function TournamentDetailsView({ tournamentId }: TournamentDetailsViewPro
 
                         <div className="flex flex-col gap-4 w-full">
                             <div className="bg-black/60 backdrop-blur-3xl p-4 rounded-2xl border border-white/10 space-y-2">
-                                <div className="flex justify-between text-sm mb-1">
+                                <div className="flex justify-between text-piggy-body mb-1">
                                     <span className="text-gray-400 flex items-center gap-2 font-bold uppercase tracking-tight"><Users className="w-4 h-4" /> Participants</span>
                                     <span className="text-white font-black tracking-tighter">{confirmedParticipants.length} / {tournament.maxPlayers}</span>
                                 </div>
@@ -616,7 +705,7 @@ export function TournamentDetailsView({ tournamentId }: TournamentDetailsViewPro
                                             <SelectItem
                                                 key={tab}
                                                 value={tab.toLowerCase()}
-                                                className="focus:bg-white/10 focus:text-white cursor-pointer py-3 font-mono text-xs uppercase tracking-wider text-white hover:text-white hover:bg-white/5"
+                                                className="focus:bg-white/10 focus:text-white cursor-pointer py-3 font-mono text-xs uppercase tracking-tight text-white hover:text-white hover:bg-white/5"
                                             >
                                                 {tab}
                                             </SelectItem>
@@ -624,7 +713,7 @@ export function TournamentDetailsView({ tournamentId }: TournamentDetailsViewPro
                                         {tournament.allowBetting && (
                                             <SelectItem
                                                 value="betting"
-                                                className="focus:bg-white/10 focus:text-white cursor-pointer py-3 font-mono text-xs uppercase tracking-wider text-white hover:text-white hover:bg-white/5"
+                                                className="focus:bg-white/10 focus:text-white cursor-pointer py-3 font-mono text-xs uppercase tracking-tight text-white hover:text-white hover:bg-white/5"
                                             >
                                                 Betting
                                             </SelectItem>
@@ -639,7 +728,7 @@ export function TournamentDetailsView({ tournamentId }: TournamentDetailsViewPro
                                     <TabsTrigger
                                         key={tab}
                                         value={tab.toLowerCase()}
-                                        className="data-[state=active]:bg-[var(--color-piggy-deep-pink)] data-[state=active]:text-white text-gray-400 py-3 px-6 rounded-lg font-bold font-mono text-sm uppercase"
+                                        className="data-[state=active]:bg-[var(--color-piggy-deep-pink)] data-[state=active]:text-white text-gray-400 py-3 px-6 rounded-lg font-bold font-mono text-piggy-body uppercase"
                                     >
                                         {tab}
                                     </TabsTrigger>
@@ -647,7 +736,7 @@ export function TournamentDetailsView({ tournamentId }: TournamentDetailsViewPro
                                 {tournament.allowBetting && (
                                     <TabsTrigger
                                         value="betting"
-                                        className="data-[state=active]:bg-[var(--color-piggy-deep-pink)] data-[state=active]:text-white text-gray-400 py-3 px-6 rounded-lg font-bold font-mono text-sm uppercase"
+                                        className="data-[state=active]:bg-[var(--color-piggy-deep-pink)] data-[state=active]:text-white text-gray-400 py-3 px-6 rounded-lg font-bold font-mono text-piggy-body uppercase"
                                     >
                                         Betting
                                     </TabsTrigger>
@@ -656,8 +745,8 @@ export function TournamentDetailsView({ tournamentId }: TournamentDetailsViewPro
 
                             <TabsContent value="overview" className="mt-2 md:mt-6 space-y-3 md:space-y-6">
                                 <div className="bg-black/60 backdrop-blur-3xl border border-white/10 rounded-2xl p-4 md:p-6">
-                                    <h3 className="text-xs font-mono font-black uppercase tracking-widest text-[var(--color-piggy-deep-pink)] mb-3">About this Tournament</h3>
-                                    <p className="text-gray-400 text-sm leading-snug">
+                                    <h3 className="text-piggy-label font-mono font-black uppercase tracking-widest text-[var(--color-piggy-deep-pink)] mb-3">About this Tournament</h3>
+                                    <p className="text-gray-400 text-piggy-body leading-snug">
                                         {tournament.description}
                                     </p>
 
@@ -748,15 +837,15 @@ export function TournamentDetailsView({ tournamentId }: TournamentDetailsViewPro
                                 </div>
                             </TabsContent>
 
-                            <TabsContent value="betting" className="mt-2 md:mt-6">
+                            <TabsContent value="betting" className="mt-2 md:mt-6 flex-none block">
                                 <div className="flex flex-col gap-[10px]">
                                     {/* Host Actions Toolbar */}
                                     {isHost && (
-                                        <div className="bg-[var(--color-piggy-deep-pink)]/10 border border-[var(--color-piggy-deep-pink)]/30 rounded-2xl p-4 relative z-40 block">
+                                        <div className="bg-[var(--color-piggy-deep-pink)]/10 border border-[var(--color-piggy-deep-pink)]/30 rounded-2xl p-4 relative z-40 block mb-6">
                                             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
                                                 <div className="flex items-center gap-3">
                                                     <Shield className="w-5 h-5 text-[var(--color-piggy-deep-pink)]" />
-                                                    <span className="font-mono font-bold text-white uppercase tracking-wider text-sm">Host Controls</span>
+                                                    <span className="font-mono font-bold text-white uppercase tracking-tight text-sm">Host Controls</span>
                                                 </div>
                                                 <div className="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto">
                                                     {/* Create Market Button */}
@@ -819,7 +908,7 @@ export function TournamentDetailsView({ tournamentId }: TournamentDetailsViewPro
                                                                                 setResolutionMarket(market);
                                                                                 setIsResolutionModalOpen(true);
                                                                             }}
-                                                                            className="hover:bg-white/10 focus:bg-white/10 cursor-pointer font-mono text-xs uppercase tracking-wider py-2"
+                                                                            className="hover:bg-white/10 focus:bg-white/10 cursor-pointer font-mono text-xs uppercase tracking-tight py-2"
                                                                         >
                                                                             {market.marketQuestion || market.question}
                                                                         </DropdownMenuItem>
@@ -833,125 +922,168 @@ export function TournamentDetailsView({ tournamentId }: TournamentDetailsViewPro
                                         </div>
                                     )}
 
-                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                        <div>
-                                            <h3 className="text-sm md:text-2xl font-mono font-black uppercase tracking-widest text-white flex items-center gap-2">
-                                                <Coins className="w-5 h-5 md:w-6 md:h-6 text-[var(--color-piggy-deep-pink)]" />
-                                                Betting Markets
-                                            </h3>
-                                            <p className="text-sm text-gray-400 mt-1">
-                                                {tournament.bettingMarkets?.length || 0} active markets available.
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    {tournament.bettingMarkets?.map((market: any) => (
-                                        <div key={market.id} className="bg-black/60 backdrop-blur-3xl border border-white/10 rounded-3xl p-6 relative overflow-hidden">
-                                            <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-6">
-                                                <div>
-                                                    <div className="flex items-center gap-2 mb-2">
-                                                        <Badge variant="outline" className="text-[var(--color-piggy-deep-pink)] border-[var(--color-piggy-deep-pink)]">
-                                                            {market.marketType}
-                                                        </Badge>
-                                                        {market.status === "SETTLED" && (
-                                                            <Badge className="bg-green-500/20 text-green-400 border border-green-500/50 flex items-center gap-1">
-                                                                <CheckCircle2 className="w-3 h-3" /> Resolved
-                                                            </Badge>
+                                    {/* Market Type Tabs */}
+                                    <div className="w-full">
+                                        <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-4">
+                                            <div className="bg-black/60 backdrop-blur-3xl border border-white/10 p-1 rounded-2xl h-auto flex gap-1 overflow-x-auto w-full md:w-auto simple-scrollbar">
+                                                {[
+                                                    { id: "binary", label: "Binary Events", shortLabel: "Binary", type: "BINARY" },
+                                                    { id: "parimutuel", label: "Parimutuel Events", shortLabel: "Parimutuel", type: "PARIMUTUEL" },
+                                                    { id: "weighted", label: "Weighted Events", shortLabel: "Weighted", type: "SCALAR" },
+                                                    { id: "scored", label: "Scored Events", shortLabel: "Scored", type: "QSCORE" }
+                                                ].map((tab) => (
+                                                    <button
+                                                        key={tab.id}
+                                                        onClick={() => setMarketTab(tab.id)}
+                                                        className={cn(
+                                                            "flex-1 flex items-center justify-center gap-1 py-2.5 px-1.5 rounded-xl text-piggy-tiny font-bold transition-all whitespace-nowrap",
+                                                            marketTab === tab.id ? "bg-[var(--color-piggy-deep-pink)] text-white shadow-lg" : "text-gray-400 hover:text-white"
                                                         )}
-                                                        {market.status === "OPEN" && market.isAutonomous && (
-                                                            <Badge variant="outline" className="animate-pulse border-[var(--color-piggy-cyan)] text-[var(--color-piggy-cyan)] flex items-center gap-1">
-                                                                <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-piggy-cyan)]"></span>
-                                                                LIVE ODDS
-                                                            </Badge>
-                                                        )}
-                                                    </div>
-                                                    <h3 className="text-sm md:text-xl font-bold text-white max-w-xl">
-                                                        {market.marketQuestion}
-                                                    </h3>
-                                                </div>
-
-
-                                                {isHost && market.status !== "SETTLED" && (
-                                                    <Button
-                                                        variant="outline"
-                                                        size="icon"
-                                                        onClick={() => {
-                                                            setMarketToEdit(market);
-                                                            setIsMarketEditModalOpen(true);
-                                                        }}
-                                                        className="border-white/10 bg-black/40 hover:bg-white/10"
                                                     >
-                                                        <Edit className="w-4 h-4 text-white" />
-                                                    </Button>
-                                                )}
+                                                        <span className="md:hidden">{tab.shortLabel}</span>
+                                                        <span className="hidden md:inline">{tab.label}</span>
+                                                    </button>
+                                                ))}
                                             </div>
 
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                                {market.outcomes && market.outcomes.length > 0 ? (
-                                                    market.outcomes.map((outcome: any) => {
-                                                        const isWinner = market.status === "SETTLED" && market.winningOutcomeId === outcome.id;
-                                                        return (
-                                                            <div
-                                                                key={outcome.id}
-                                                                onClick={() => handleBetClick(market, outcome)}
-                                                                className={cn(
-                                                                    "flex items-center justify-between py-3 px-4 rounded-lg border transition-all group",
-                                                                    market.status === "ACTIVE"
-                                                                        ? "bg-black/20 border-white/5 hover:border-[var(--color-piggy-deep-pink)]/50 cursor-pointer"
-                                                                        : "bg-black/10 border-white/5 cursor-default",
-                                                                    isWinner && "bg-green-500/10 border-green-500/50 shadow-[0_0_10px_rgba(34,197,94,0.2)]"
+                                            <div className="flex items-center gap-2">
+                                                <Badge variant="outline" className="text-gray-400 border-white/10 text-[10px] uppercase tracking-wider hidden md:flex">
+                                                    <Info className="w-3 h-3 mr-1" />
+                                                    {tournament.bettingMarkets?.length || 0} Markets Active
+                                                </Badge>
+                                            </div>
+                                        </div>
+
+                                        {[
+                                            { id: "binary", label: "Binary Events", shortLabel: "Binary", type: "BINARY" },
+                                            { id: "parimutuel", label: "Parimutuel Events", shortLabel: "Parimutuel", type: "PARIMUTUEL" },
+                                            { id: "weighted", label: "Weighted Events", shortLabel: "Weighted", type: "SCALAR" },
+                                            { id: "scored", label: "Scored Events", shortLabel: "Scored", type: "QSCORE" }
+                                        ].map((tab) => {
+                                            const filteredMarkets = tournament.bettingMarkets?.filter((m: any) => m.marketType === tab.type) || [];
+                                            if (tab.id !== marketTab) return null;
+
+                                            return (
+                                                <div key={tab.id} className="mt-0 space-y-4 w-full">
+                                                    {filteredMarkets.length > 0 ? (
+                                                        filteredMarkets.map((market: any) => (
+                                                            <div key={market.id} className="bg-black/60 backdrop-blur-3xl border border-white/10 rounded-3xl p-4 md:p-6 relative overflow-hidden mb-8 last:mb-0">
+                                                                {/* Market Header with Line Separator */}
+                                                                <div className="flex items-center gap-4 mb-6 w-full">
+                                                                    <div className="shrink-0 flex flex-col gap-1 max-w-[75%]">
+                                                                        <h3 className="text-piggy-label md:text-piggy-body font-normal text-gray-400 font-mono">
+                                                                            {market.marketType === "BINARY" ? "BINARY MATCH" :
+                                                                                market.marketType === "PARIMUTUEL" ? "PARIMUTUEL POOL" :
+                                                                                    market.marketType === "SCALAR" ? "WEIGHTED POOL" :
+                                                                                        market.marketType === "QSCORE" ? "SCORE PREDICTION" : "BETTING EVENT"}
+                                                                        </h3>
+                                                                        <h2 className="text-piggy-body md:text-piggy-title font-medium text-white leading-tight break-words">
+                                                                            {market.marketQuestion}
+                                                                        </h2>
+                                                                    </div>
+                                                                    <div className="flex-1 h-[1px] bg-white/10" />
+
+                                                                    {/* Market Status Badges */}
+                                                                    <div className="flex items-center gap-2 shrink-0">
+                                                                        {market.isAutonomous && (
+                                                                            <div className="w-2 h-2 rounded-full bg-[var(--color-piggy-cyan)] animate-pulse shadow-[0_0_8px_var(--color-piggy-cyan)]" title="Live Odds" />
+                                                                        )}
+                                                                        {isHost && (
+                                                                            <Button
+                                                                                variant="ghost"
+                                                                                size="icon"
+                                                                                onClick={() => {
+                                                                                    setMarketToEdit(market);
+                                                                                    setIsMarketEditModalOpen(true);
+                                                                                }}
+                                                                                className="h-8 w-8 text-gray-500 hover:text-white hover:bg-white/10 rounded-full"
+                                                                            >
+                                                                                <Edit className="w-4 h-4" />
+                                                                            </Button>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* Outcome Grid - The New Design */}
+                                                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
+                                                                    {market.outcomes?.map((outcome: any) => {
+                                                                        const isSelected = isInSlip(outcome.id);
+                                                                        const isWinner = market.status === "SETTLED" && market.winningOutcomeId === outcome.id;
+
+                                                                        return (
+                                                                            <button
+                                                                                key={outcome.id}
+                                                                                onClick={() => handleBetClick(market, outcome)}
+                                                                                disabled={market.status !== "OPEN"}
+                                                                                className={cn(
+                                                                                    "group relative flex items-center justify-between w-full p-1 pl-4 pr-1 rounded-xl border transition-all duration-300",
+                                                                                    "bg-black/40 backdrop-blur-md", // Base background
+                                                                                    isSelected
+                                                                                        ? "border-[var(--color-piggy-deep-pink)] shadow-[0_0_20px_rgba(255,47,122,0.2)] bg-[var(--color-piggy-deep-pink)]/5"
+                                                                                        : "border-white/10 hover:border-white/30 hover:bg-white/5",
+                                                                                    market.status !== "OPEN" && "opacity-50 cursor-not-allowed grayscale"
+                                                                                )}
+                                                                            >
+                                                                                {/* Label */}
+                                                                                <span className={cn(
+                                                                                    "font-medium text-sm truncate mr-2 transition-colors",
+                                                                                    isSelected ? "text-white" : "text-gray-400 group-hover:text-gray-200"
+                                                                                )}>
+                                                                                    {outcome.label}
+                                                                                </span>
+
+                                                                                {/* Odds Box */}
+                                                                                <div className={cn(
+                                                                                    "px-2.5 py-1.5 rounded-lg text-xs font-mono font-bold transition-all",
+                                                                                    isSelected
+                                                                                        ? "bg-[var(--color-piggy-deep-pink)] text-white shadow-sm"
+                                                                                        : "bg-white/10 text-gray-300 group-hover:bg-white/20 group-hover:text-white"
+                                                                                )}>
+                                                                                    {(outcome.currentOdds || outcome.weight || 1.0).toFixed(2)}x
+                                                                                </div>
+                                                                            </button>
+                                                                        );
+                                                                    })}
+                                                                </div>
+
+                                                                {/* Host Logic Trace / Proposal Section */}
+                                                                {isHost && market.resolutionStatus === 'PROPOSED' && (
+                                                                    <div className="mt-8 pt-6 border-t border-white/5">
+                                                                        <div className="bg-gradient-to-r from-[var(--color-piggy-deep-pink)]/20 to-purple-500/20 border border-[var(--color-piggy-deep-pink)]/50 rounded-xl p-4 animate-in fade-in slide-in-from-top-2">
+                                                                            <div className="flex items-center gap-3 mb-3">
+                                                                                <Badge className="bg-[var(--color-piggy-deep-pink)] text-white font-mono uppercase text-[10px]">Oracle Proposal</Badge>
+                                                                                <span className="text-xs text-gray-400 font-mono">
+                                                                                    Winner: <span className="text-white font-bold">{market.outcomes.find((o: any) => o.id === market.aiProposedWinnerId)?.label}</span>
+                                                                                </span>
+                                                                            </div>
+                                                                            <div className="flex gap-2">
+                                                                                <Button size="sm" onClick={() => approveMutation.mutate(market.id)} className="bg-green-500 hover:bg-green-600 text-xs h-8">Approve</Button>
+                                                                                <Button size="sm" variant="outline" onClick={() => rejectMutation.mutate(market.id)} className="border-red-500/50 text-red-400 hover:bg-red-500/10 text-xs h-8">Reject</Button>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
                                                                 )}
-                                                            >
-                                                                <span className={cn(
-                                                                    "font-bold text-sm",
-                                                                    isWinner ? "text-green-400" : "text-gray-400 group-hover:text-white"
-                                                                )}>
-                                                                    {outcome.label} {isWinner && "(WINNER)"}
-                                                                </span>
-                                                                <span className="font-mono font-bold text-sm text-[var(--color-piggy-super-green)] bg-[var(--color-piggy-super-green)]/10 px-3 py-1.5 rounded-md min-w-[60px] text-center">
-                                                                    {outcome.weight ? `x${outcome.weight}` : "-"}
-                                                                </span>
                                                             </div>
-                                                        );
-                                                    })
-                                                ) : (
-                                                    <div className="col-span-full text-center text-gray-400 text-sm italic py-2">
-                                                        No outcomes defined.
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    ))}
-
-                                    {(!tournament.bettingMarkets || tournament.bettingMarkets.length === 0) && (
-                                        <div className="text-gray-400 text-sm leading-snug text-center py-10 bg-black/20 rounded-2xl border border-white/5">
-                                            No active markets available.
-                                        </div>
-                                    )}
+                                                        ))
+                                                    ) : (
+                                                        <div className="flex flex-col items-center justify-center py-20 text-center border border-dashed border-white/10 rounded-2xl bg-white/5 min-h-[300px]">
+                                                            <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mb-4">
+                                                                <TrendingUp className="w-6 h-6 text-gray-500" />
+                                                            </div>
+                                                            <p className="text-gray-400 font-medium mb-1">No {tab.label.toLowerCase()} available</p>
+                                                            <p className="text-gray-600 text-xs uppercase tracking-widest">Check back later for new markets</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
                                 </div>
                             </TabsContent>
                         </Tabs>
                     </div>
                 </div>
             </div >
-
-            {/* Bet Placement Modal */}
-            {
-                selectedOutcome && (
-                    <BetPlacementModal
-                        open={isBetModalOpen}
-                        onOpenChange={setIsBetModalOpen}
-                        marketId={selectedMarket?.id}
-                        outcomeId={selectedOutcome?.id}
-                        tournamentName={tournament.name}
-                        outcomeName={selectedOutcome?.label}
-                        odds={selectedOutcome?.currentOdds || 1.0}
-                        minBet={selectedMarket?.minBet || 1}
-                        maxBet={selectedMarket?.maxBet || 1000}
-                        token={selectedMarket?.poolPreSeedToken || "USDC"}
-                    />
-                )
-            }
 
             {/* Payment / Registration Modal */}
             {
@@ -981,10 +1113,10 @@ export function TournamentDetailsView({ tournamentId }: TournamentDetailsViewPro
 
 
             <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-                <AlertDialogContent className="bg-[#1a1a1a] border-white/10 text-white">
+                <AlertDialogContent className="bg-black/60 backdrop-blur-3xl border-white/10 text-white w-[95vw] max-w-md rounded-[var(--radius-piggy-modal)]">
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                        <AlertDialogDescription className="text-gray-400">
+                        <AlertDialogTitle className="text-piggy-title font-black tracking-tighter">Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription className="text-gray-400 text-piggy-label font-medium uppercase tracking-tight">
                             This action cannot be undone. This will permanently delete the tournament and remove all data from our servers.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
@@ -1016,17 +1148,51 @@ export function TournamentDetailsView({ tournamentId }: TournamentDetailsViewPro
                 tournamentId={tournamentId}
             />
 
-            {tournament && (
-                <SeedDepositModal
-                    isOpen={isSeedModalOpen}
-                    onClose={() => setIsSeedModalOpen(false)}
-                    tournamentId={tournamentId}
-                    tournamentName={tournament.name}
-                    onSuccess={() => {
-                        queryClient.invalidateQueries({ queryKey: ['tournament', tournamentId] });
-                    }}
-                />
-            )}
+            {
+                isSeedModalOpen && (
+                    <SeedDepositModal
+                        isOpen={isSeedModalOpen}
+                        onClose={() => setIsSeedModalOpen(false)}
+                        tournamentId={tournamentId}
+                        tournamentName={tournament.name}
+                        onSuccess={() => {
+                            queryClient.invalidateQueries({ queryKey: ['tournament', tournamentId] });
+                        }}
+                    />
+                )
+            }
+
+            {
+                proofMarket && (
+                    <ProofOfSettlementModal
+                        isOpen={isProofModalOpen}
+                        onClose={() => setIsProofModalOpen(false)}
+                        market={proofMarket}
+                        tableId={tournament.tableId}
+                    />
+                )
+            }
+
+            {
+                !isCartOpen && (
+                    <BettingCartFloatingButton onClick={() => setIsCartOpen(true)} />
+                )
+            }
+
+            <BettingCartDrawer
+                isOpen={isCartOpen}
+                onClose={() => setIsCartOpen(false)}
+                onCheckout={() => {
+                    setIsCartOpen(false);
+                    setIsTreasuryModalOpen(true);
+                }}
+                tournament={tournament}
+            />
+
+            <TreasuryPaymentModal
+                isOpen={isTreasuryModalOpen}
+                onClose={() => setIsTreasuryModalOpen(false)}
+            />
         </div >
     );
 }

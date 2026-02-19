@@ -31,8 +31,8 @@ export function TopAppsWidget() {
     return (
         <div className="bg-black/60 backdrop-blur-3xl border border-white/5 rounded-2xl md:rounded-[2.5rem] p-4 md:p-6 h-full flex flex-col" >
             <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold text-white font-mono uppercase tracking-tighter">Top Apps</h3>
-                <span className="text-[10px] font-black text-[var(--color-piggy-deep-pink)] bg-[var(--color-piggy-deep-pink)]/10 px-2.5 py-1 rounded-full border border-[var(--color-piggy-deep-pink)]/20 uppercase tracking-wider">
+                <h3 className="text-piggy-title font-bold text-white font-mono tracking-tighter">Top Apps</h3>
+                <span className="text-piggy-label font-black text-[var(--color-piggy-deep-pink)] bg-[var(--color-piggy-deep-pink)]/10 px-2.5 py-1 rounded-full border border-[var(--color-piggy-deep-pink)]/20 uppercase tracking-tight">
                     Weekly
                 </span>
             </div>
@@ -45,18 +45,18 @@ export function TopAppsWidget() {
                         return (
                             <div key={game.id} className="flex items-center justify-between p-2 rounded-xl hover:bg-white/5 transition-colors group">
                                 <div className="flex items-center gap-3">
-                                    <span className="font-mono text-lg font-bold text-gray-500 w-4">{index + 1}</span>
+                                    <span className="font-mono text-piggy-body font-bold text-gray-500 w-4">{index + 1}</span>
                                     <div className="w-10 h-10 rounded-lg overflow-hidden border border-white/10">
                                         <img src={game.thumbnail} alt={game.title} className="w-full h-full object-cover" />
                                     </div>
                                     <div className="flex flex-col">
-                                        <span className="text-sm font-bold text-white group-hover:text-[var(--color-piggy-deep-pink)] transition-colors truncate max-w-[120px]">
+                                        <span className="text-piggy-body font-bold text-white group-hover:text-[var(--color-piggy-deep-pink)] transition-colors truncate max-w-[120px]">
                                             {game.title}
                                         </span>
                                         {isOwner && (
                                             <button
                                                 onClick={() => setEditingGame(game)}
-                                                className="text-xs text-gray-500 hover:text-[var(--color-piggy-deep-pink)] font-bold flex items-center gap-1 transition-colors"
+                                                className="text-piggy-label text-gray-500 hover:text-[var(--color-piggy-deep-pink)] font-bold flex items-center gap-1 transition-colors"
                                             >
                                                 <Settings className="w-3 h-3" /> Edit
                                             </button>
@@ -64,11 +64,9 @@ export function TopAppsWidget() {
                                     </div>
                                 </div>
 
-                                {/* Mock trend for UI consistency */}
-                                <div className={`flex items-center gap-1 text-sm font-bold px-2 py-1 rounded-full ${index < 2 ? 'text-[var(--color-piggy-super-green)] bg-[var(--color-piggy-super-green)]/10' :
-                                    'text-gray-400 bg-gray-500/10'
-                                    }`}>
-                                    {index < 2 ? <TrendingUp className="w-3 h-3" /> : <Minus className="w-3 h-3" />}
+                                {/* Mock trend placeholder until backend supports history */}
+                                <div className="flex items-center gap-1 text-piggy-label font-bold px-2 py-1 rounded-full text-gray-400 bg-gray-500/10">
+                                    <Minus className="w-3 h-3" />
                                 </div>
                             </div>
                         );

@@ -38,31 +38,12 @@ export async function GET(request: NextRequest) {
         }
 
         // Calculate current odds for each outcome in each market
+        const { calculateCurrentOdds } = await import('@/lib/betting');
         const marketsWithOdds = markets.map(market => {
-            const outcomesWithOdds = market.outcomes.map(outcome => {
-                let odds = 1.0;
-
-                if (market.marketType === 'PARIMUTUEL') {
-                    // Parimutuel odds: (Total Pool / Outcome Pool)
-                    const netPool = (market.totalPool + market.poolPreSeed) * (1 - market.bookmakingFee / 100);
-                    odds = outcome.totalBets > 0 ? netPool / outcome.totalBets : 0;
-                } else if (market.marketType === 'WEIGHTED') {
-                    // Weighted odds based on weight
-                    odds = outcome.weight || 1.0;
-                } else if (market.marketType === 'BINARY') {
-                    // Binary: 2.0 for both outcomes (even odds)
-                    odds = 2.0;
-                } else if (market.marketType === 'SCORE') {
-                    // Score-based: dynamic based on total bets
-                    const totalBets = market.outcomes.reduce((sum, o) => sum + o.totalBets, 0);
-                    odds = totalBets > 0 ? totalBets / (outcome.totalBets || 1) : 1.0;
-                }
-
-                return {
-                    ...outcome,
-                    currentOdds: Math.max(odds, 1.0) // Minimum 1.0 odds
-                };
-            });
+            const outcomesWithOdds = market.outcomes.map(outcome => ({
+                ...outcome,
+                currentOdds: calculateCurrentOdds(market, outcome)
+            }));
 
             return {
                 ...market,

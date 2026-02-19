@@ -18,13 +18,14 @@ export default function CompetitiveHubPage() {
     ];
 
     return (
-        <div className="w-full max-w-7xl mx-auto px-2.5 md:px-6 py-6 md:py-8 space-y-6 md:space-y-8 pb-20">
+        <div className="w-full max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-8 space-y-6 md:space-y-8 pb-20">
             {/* Header Section */}
             <div>
-                <h1 className="text-3xl md:text-4xl font-black text-white font-mono tracking-tighter mb-2">
-                    Competitive Hub
+                <h1 className="text-piggy-hero font-black text-white font-mono tracking-tighter mb-2">
+                    <span className="md:hidden">Contest Hub</span>
+                    <span className="hidden md:inline">Competitive Hub</span>
                 </h1>
-                <p className="text-white font-mono text-xs md:text-sm max-w-md opacity-70">
+                <p className="text-white font-mono text-piggy-label md:text-piggy-body max-w-md opacity-70">
                     Compete in daily tournaments, climb the leaderboards, and earn rewards.
                 </p>
             </div>
@@ -37,7 +38,7 @@ export default function CompetitiveHubPage() {
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
                             className={cn(
-                                "flex-1 flex items-center justify-center gap-1 py-2.5 px-1.5 rounded-xl text-[10px] font-bold transition-all whitespace-nowrap",
+                                "flex-1 flex items-center justify-center gap-1 py-2.5 px-1.5 rounded-xl text-piggy-tiny font-bold transition-all whitespace-nowrap",
                                 activeTab === tab.id
                                     ? "bg-[var(--color-piggy-deep-pink)] text-white shadow-lg"
                                     : "text-white/40 hover:text-white/60"

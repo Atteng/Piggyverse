@@ -51,8 +51,8 @@ export function GlobalLeaderboardTable() {
         <div className="bg-black/60 backdrop-blur-3xl border border-white/5 rounded-2xl md:rounded-[2.5rem] p-4 md:p-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                 <div className="flex items-center gap-3">
-                    <h3 className="text-xl font-bold text-white font-mono uppercase tracking-tighter leading-[0.8]">Global Leaderboard</h3>
-                    <div className="flex items-center gap-2 text-[10px] font-black text-[var(--color-piggy-deep-pink)] bg-[var(--color-piggy-deep-pink)]/10 px-3 py-1.5 rounded-full border border-[var(--color-piggy-deep-pink)]/20 uppercase tracking-wider">
+                    <h3 className="text-piggy-title font-bold text-white font-mono tracking-tighter leading-[0.8]">Global Leaderboard</h3>
+                    <div className="flex items-center gap-2 text-piggy-label font-black text-[var(--color-piggy-deep-pink)] bg-[var(--color-piggy-deep-pink)]/10 px-3 py-1.5 rounded-full border border-[var(--color-piggy-deep-pink)]/20 uppercase tracking-tight">
                         <TrendingUp className="w-3 h-3" />
                         All time
                     </div>
@@ -60,7 +60,7 @@ export function GlobalLeaderboardTable() {
 
                 <div className="flex items-center gap-2 w-full md:w-auto">
                     <Select value={selectedGame} onValueChange={setSelectedGame}>
-                        <SelectTrigger className="w-full md:w-[180px] h-9 border-white/10 bg-black/20 text-sm font-mono focus:ring-1 focus:ring-white/20 transition-all">
+                        <SelectTrigger className="w-full md:w-[180px] h-9 border-white/10 bg-black/20 text-piggy-body font-mono focus:ring-1 focus:ring-white/20 transition-all">
                             <Filter className="w-3 h-3 mr-2 text-gray-400" />
                             <SelectValue placeholder="Select App" />
                         </SelectTrigger>
@@ -78,13 +78,13 @@ export function GlobalLeaderboardTable() {
                 <table className="w-full">
                     <thead className="hidden lg:table-header-group">
                         <tr className="border-b border-white/10">
-                            <th className="text-left py-3 px-4 text-sm font-bold text-gray-500 capitalize tracking-wider font-mono">Rank</th>
-                            <th className="text-left py-3 px-4 text-sm font-bold text-gray-500 capitalize tracking-wider font-mono">Player</th>
-                            <th className="text-center py-3 px-2 text-sm font-bold text-gray-500 capitalize tracking-wider font-mono">Match Wins</th>
-                            <th className="text-center py-3 px-2 text-sm font-bold text-gray-500 capitalize tracking-wider font-mono">Time Played</th>
-                            <th className="text-center py-3 px-2 text-sm font-bold text-gray-500 capitalize tracking-wider font-mono">Tournament Wins</th>
-                            <th className="text-center py-3 px-2 text-sm font-bold text-gray-500 capitalize tracking-wider font-mono">Best</th>
-                            <th className="text-right py-3 px-4 text-sm font-bold text-gray-500 capitalize tracking-wider font-mono">Effort Score</th>
+                            <th className="text-left py-3 px-4 text-piggy-label font-bold text-gray-500 capitalize tracking-tight font-mono">Rank</th>
+                            <th className="text-left py-3 px-4 text-piggy-label font-bold text-gray-500 capitalize tracking-tight font-mono">Player</th>
+                            <th className="text-center py-3 px-2 text-piggy-label font-bold text-gray-500 capitalize tracking-tight font-mono">Match Wins</th>
+                            <th className="text-center py-3 px-2 text-piggy-label font-bold text-gray-500 capitalize tracking-tight font-mono">Time Played</th>
+                            <th className="text-center py-3 px-2 text-piggy-label font-bold text-gray-500 capitalize tracking-tight font-mono">Tournament Wins</th>
+                            <th className="text-center py-3 px-2 text-piggy-label font-bold text-gray-500 capitalize tracking-tight font-mono">Best</th>
+                            <th className="text-right py-3 px-4 text-piggy-label font-bold text-gray-500 capitalize tracking-tight font-mono">Effort Score</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -97,13 +97,13 @@ export function GlobalLeaderboardTable() {
                                     <td className="py-3 lg:py-4 px-2 lg:px-4">
                                         <div className="flex items-center gap-2">
                                             {index < 3 ? (
-                                                <div className={`w-5 h-5 lg:w-6 lg:h-6 rounded-full flex items-center justify-center text-[10px] lg:text-xs font-bold text-black ${index === 0 ? 'bg-[#FFD700]' :
+                                                <div className={`w-5 h-5 lg:w-6 lg:h-6 rounded-full flex items-center justify-center text-piggy-label font-bold text-black ${index === 0 ? 'bg-[#FFD700]' :
                                                     index === 1 ? 'bg-[#C0C0C0]' : 'bg-[#CD7F32]'
                                                     }`}>
                                                     {player.rank}
                                                 </div>
                                             ) : (
-                                                <span className="text-xs lg:text-sm font-mono text-gray-500 w-5 lg:w-6 text-center">{player.rank}</span>
+                                                <span className="text-piggy-label font-mono text-gray-500 w-5 lg:w-6 text-center">{player.rank}</span>
                                             )}
                                         </div>
                                     </td>
@@ -113,44 +113,44 @@ export function GlobalLeaderboardTable() {
                                                 <img src={player.avatar} alt={player.username} className="w-full h-full object-cover" />
                                             </div>
                                             <div className="flex flex-col min-w-0">
-                                                <span className="font-mono text-sm lg:text-base font-bold text-white group-hover:text-[var(--color-piggy-deep-pink)] transition-colors truncate">
+                                                <span className="font-mono text-piggy-body font-bold text-white group-hover:text-[var(--color-piggy-deep-pink)] transition-colors truncate">
                                                     {player.username}
                                                 </span>
                                                 {/* Mobile-only stats row */}
                                                 <div className="flex lg:hidden items-center gap-1.5 whitespace-nowrap overflow-hidden mt-0.5">
-                                                    <span className="text-[9px] font-bold text-white/40 uppercase tracking-tighter">
+                                                    <span className="text-piggy-tiny font-bold text-white/40 uppercase tracking-tighter">
                                                         {player.matchWins} WINS
                                                     </span>
-                                                    <span className="text-white/10 text-[10px]">•</span>
-                                                    <span className="text-[9px] font-medium text-white/20 uppercase">
+                                                    <span className="text-white/10 text-piggy-tiny">•</span>
+                                                    <span className="text-piggy-tiny font-medium text-white/20 uppercase">
                                                         {player.timePlayed}
                                                     </span>
-                                                    <span className="text-white/10 text-[10px] lg:hidden">•</span>
+                                                    <span className="text-white/10 text-piggy-tiny lg:hidden">•</span>
                                                     <div className="flex items-center gap-0.5">
                                                         <Trophy className="w-2.5 h-2.5 text-[var(--color-piggy-deep-pink)]" />
-                                                        <span className="text-[9px] font-bold text-[var(--color-piggy-deep-pink)]">{player.tourneyWins}</span>
+                                                        <span className="text-piggy-tiny font-bold text-[var(--color-piggy-deep-pink)]">{player.tourneyWins}</span>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </td>
                                     <td className="text-center py-4 px-2 hidden lg:table-cell">
-                                        <span className="font-mono text-sm text-gray-300">{player.matchWins}</span>
+                                        <span className="font-mono text-piggy-body text-gray-300">{player.matchWins}</span>
                                     </td>
                                     <td className="text-center py-4 px-2 hidden lg:table-cell">
-                                        <span className="font-mono text-xs text-gray-400">{player.timePlayed}</span>
+                                        <span className="font-mono text-piggy-label text-gray-400">{player.timePlayed}</span>
                                     </td>
                                     <td className="text-center py-4 px-2 hidden lg:table-cell">
                                         <div className="flex items-center justify-center gap-1">
                                             <Trophy className="w-3 h-3 text-[var(--color-piggy-deep-pink)]" />
-                                            <span className="font-mono text-sm text-gray-300">{player.tourneyWins}</span>
+                                            <span className="font-mono text-piggy-body text-gray-300">{player.tourneyWins}</span>
                                         </div>
                                     </td>
                                     <td className="text-center py-4 px-2 hidden lg:table-cell">
-                                        <span className="font-mono text-xs text-gray-400">{player.bestTime}</span>
+                                        <span className="font-mono text-piggy-label text-gray-400">{player.bestTime}</span>
                                     </td>
                                     <td className="text-right py-3 lg:py-4 px-2 lg:px-4">
-                                        <span className="font-mono text-sm lg:text-base font-bold text-[var(--color-piggy-super-green)]">
+                                        <span className="font-mono text-piggy-body font-bold text-[var(--color-piggy-super-green)]">
                                             {player.effortScore.toLocaleString()}
                                         </span>
                                     </td>

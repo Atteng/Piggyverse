@@ -37,14 +37,14 @@ function LibraryPageContent() {
     };
 
     return (
-        <div className="w-full max-w-7xl mx-auto px-2.5 md:px-6 py-6 md:py-8 space-y-6 md:space-y-8">
+        <div className="w-full max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-8 space-y-6 md:space-y-8">
             {/* Page Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl md:text-4xl font-black text-white font-mono tracking-tighter mb-2">
+                    <h1 className="text-piggy-hero font-black text-white font-mono tracking-tighter mb-2">
                         Game Library
                     </h1>
-                    <p className="text-white font-mono text-xs md:text-sm max-w-md opacity-70">
+                    <p className="text-white font-mono text-piggy-label md:text-piggy-body max-w-md opacity-70">
                         Explore the PiggyVerse collection. Play, compete, and earn tokens in our curated list of games.
                     </p>
                 </div>
@@ -52,7 +52,7 @@ function LibraryPageContent() {
 
             {/* Results Info */}
             {query && (
-                <div className="text-sm text-gray-400 font-mono">
+                <div className="text-piggy-body text-gray-400 font-mono">
                     Showing results for "{query}"
                 </div>
             )}
@@ -103,7 +103,7 @@ function LibraryPageContent() {
                                 <ChevronLeft className="h-4 w-4" />
                             </Button>
 
-                            <span className="text-sm font-mono text-white">
+                            <span className="text-piggy-body font-mono text-white">
                                 Page {currentPage} of {pagination.totalPages}
                             </span>
 

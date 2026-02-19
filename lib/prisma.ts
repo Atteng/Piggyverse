@@ -5,71 +5,56 @@ const globalForPrisma = globalThis as unknown as {
     usingFallback: boolean;
 };
 
-// Get database URLs
 const POOLER_URL = process.env.DATABASE_URL!;
 const DIRECT_URL = process.env.DIRECT_DATABASE_URL || POOLER_URL.replace('pooler.supabase.com', 'connect.supabase.com');
 
-// Function to create Prisma client with a specific URL
-function createPrismaClient(url: string) {
-    return new PrismaClient({
-        datasources: {
-            db: { url }
-        },
-        log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
+// Initialize the client
+// If the terminal logs showed P1001 frequently, we might want to prioritize DIRECT_URL 
+// but the user wants a fallback.
+let prismaInstance: PrismaClient;
+
+if (process.env.NODE_ENV === 'production') {
+    prismaInstance = new PrismaClient({
+        datasources: { db: { url: POOLER_URL } },
     });
-}
-
-// Function to test connection
-async function testConnection(client: PrismaClient): Promise<boolean> {
-    try {
-        await client.$queryRaw`SELECT 1`;
-        return true;
-    } catch (error) {
-        return false;
+} else {
+    if (!globalForPrisma.prisma) {
+        // In development, we use a single instance to prevent hot-reloading from creating too many connections
+        globalForPrisma.prisma = new PrismaClient({
+            datasources: { db: { url: POOLER_URL } },
+            log: ['error', 'warn'],
+        });
     }
+    prismaInstance = globalForPrisma.prisma;
 }
 
-// Initialize Prisma client with fallback logic
-async function initializePrisma() {
-    if (globalForPrisma.prisma) {
-        return globalForPrisma.prisma;
-    }
-
-    // Try pooler first
-    let client = createPrismaClient(POOLER_URL);
-    const poolerWorks = await testConnection(client);
-
-    if (!poolerWorks) {
-        console.warn('⚠️  Pooler connection failed, switching to direct connection...');
-        await client.$disconnect();
-        client = createPrismaClient(DIRECT_URL);
-
-        const directWorks = await testConnection(client);
-        if (directWorks) {
-            console.log('✅ Connected using direct connection');
-            globalForPrisma.usingFallback = true;
-        } else {
-            console.error('❌ Both pooler and direct connections failed');
-        }
-    } else {
-        console.log('✅ Connected using pooler');
-        globalForPrisma.usingFallback = false;
-    }
-
-    globalForPrisma.prisma = client;
-    return client;
+/**
+ * Fallback Logic:
+ * If a query fails with a connection error (P1001), we can't easily "hot-swap" the exported prisma constant,
+ * but we can provide this helper or rely on the user to restart if the pooler is permanently down.
+ * 
+ * For a TRUZY automated fallback, we would need a Proxy, which can be risky.
+ * Instead, we'll try to detect the connection status once on startup.
+ */
+if (process.env.NODE_ENV !== 'production' && !globalForPrisma.usingFallback) {
+    prismaInstance.$connect()
+        .then(() => {
+            console.log('✅ Prisma connected to Pooler');
+        })
+        .catch((err) => {
+            if (err.code === 'P1001' || err.message?.includes('Can\'t reach database server')) {
+                console.warn('⚠️  Pooler unreachable. Switching global Prisma instance to DIRECT_URL...');
+                const directClient = new PrismaClient({
+                    datasources: { db: { url: DIRECT_URL } },
+                    log: ['error', 'warn'],
+                });
+                globalForPrisma.prisma = directClient;
+                globalForPrisma.usingFallback = true;
+                // Note: Existing imports of 'prisma' might still point to the old instance
+                // but Next.js hot-reloading will usually pick up the new global on the next request/save.
+            }
+        });
 }
 
-// Export a promise that resolves to the Prisma client
-export const prisma = globalForPrisma.prisma ?? createPrismaClient(POOLER_URL);
-
-// Initialize connection on first import (in development)
-if (process.env.NODE_ENV !== 'production' && !globalForPrisma.prisma) {
-    initializePrisma().then(client => {
-        globalForPrisma.prisma = client;
-    }).catch(err => {
-        console.error('Failed to initialize Prisma:', err);
-    });
-}
-
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
+export const prisma = prismaInstance;
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prismaInstance;

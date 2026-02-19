@@ -6,8 +6,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_DATABASE_URL")
 }
 
 // ============================================
@@ -299,6 +300,13 @@ enum MarketStatus {
   CANCELLED
 }
 
+enum ResolutionStatus {
+  NONE
+  PROPOSED     // AI has found a winner, waiting for Host
+  APPROVED     // Host accepted AI result
+  REJECTED     // Host overrode AI result
+}
+
 model BettingMarket {
   id           String     @id @default(cuid())
   tournamentId String
@@ -322,6 +330,15 @@ model BettingMarket {
   // Phase 1: Autonomous Betting
   lastSyncedHand Int?     @default(0) // Tracks log processing progress
   isAutonomous   Boolean  @default(false) // Enable auto-odds engine
+
+  // Phase 2: Intelligence & Guards
+  resolutionStatus ResolutionStatus @default(NONE)
+  aiProposedWinnerId String? // Outcome ID proposed by AI
+  resolverDSL      String? // Compiled settlement logic (plain-english reasoning from DRE)
+
+  // Phase 3: Integrity & Safety (Anti-Sniping)
+  isPaused         Boolean @default(false)
+  suspensionReason String? // e.g., "ALL_IN_DETECTED", "EMERGENCY_STOP"
 
   createdAt DateTime @default(now())
 
@@ -371,6 +388,7 @@ model Bet {
   status       BetStatus @default(PENDING)
   payoutAmount Float?
   oddsAtPlacement Float? // Locks the multiplier at bet-time
+  minOdds         Float? // Slippage protection: reject if current odds < this
 
   placedAt DateTime @default(now())
   bookingCode String? @unique

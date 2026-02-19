@@ -27,11 +27,11 @@ export function NewGamesSection() {
     if (games.length === 0) return null;
 
     return (
-        <div className="h-full flex flex-col relative overflow-hidden mb-4 md:mb-0">
-            <div className="flex flex-col mt-3.5 md:mt-0 mb-1 md:mb-6 z-10 px-2 text-white">
-                <h2 className="text-2xl font-black font-mono tracking-tight mb-0 md:mb-1 leading-[0.8]">New Arrivals</h2>
-                <p className="text-sm text-white/40 font-medium tracking-wider ml-1 leading-tight">
-                    The latest additions to the piggyverse
+        <div className="h-full flex flex-col relative overflow-hidden">
+            <div className="flex flex-col mb-1 md:mb-6 z-10 px-2 text-white">
+                <h2 className="text-piggy-title font-black font-mono tracking-tight mb-0 md:mb-1 leading-[0.8]">New Arrivals</h2>
+                <p className="text-piggy-body text-white/40 font-medium tracking-tight ml-1 leading-tight">
+                    Latest additions to the piggyverse
                 </p>
             </div>
 
@@ -53,15 +53,15 @@ export function NewGamesSection() {
 
                         {/* Info */}
                         <div className="flex-1 px-3 flex flex-col min-w-0">
-                            <h3 className="text-base font-black text-white group-hover:text-black font-mono tracking-tighter transition-colors truncate uppercase leading-[0.7] mb-0">
+                            <h3 className="text-piggy-title font-black text-white group-hover:text-black font-mono tracking-tighter transition-colors truncate leading-[0.7] mb-0">
                                 {game.title}
                             </h3>
                             <div className="flex items-center gap-2 -mt-1">
-                                <span className="text-[8px] font-black text-[var(--color-piggy-deep-pink)] group-hover:text-black transition-colors uppercase tracking-widest">
+                                <span className="text-piggy-label font-black text-[var(--color-piggy-deep-pink)] group-hover:text-black transition-colors uppercase tracking-widest">
                                     {game.categories[0] || "Puzzle"}
                                 </span>
                                 <span className="text-white/20 group-hover:text-black/20">•</span>
-                                <span className="text-[8px] font-black text-white/40 group-hover:text-black/40 transition-colors uppercase tracking-widest truncate max-w-[100px]">
+                                <span className="text-piggy-label font-black text-white/40 group-hover:text-black/40 transition-colors uppercase tracking-widest truncate max-w-[100px]">
                                     {game.uploaderName || "Admin"}
                                 </span>
                             </div>
@@ -69,11 +69,17 @@ export function NewGamesSection() {
 
                         {/* Action */}
                         <div className="px-4">
-                            <Link href={`/competitive-hub/${game.id}`}>
-                                <Button className="bg-[var(--color-piggy-deep-pink)] hover:bg-[var(--color-piggy-deep-pink)]/90 text-white rounded-full w-8 h-8 shadow-lg transition-all hover:scale-110 active:scale-95 flex items-center justify-center p-0 shrink-0">
-                                    <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
-                                </Button>
-                            </Link>
+                            <Button
+                                onClick={async () => {
+                                    if (!game.gameUrl) return;
+                                    fetch(`/api/games/${game.id}/play`, { method: "POST" }).catch(console.error);
+                                    window.open(game.gameUrl, '_blank');
+                                }}
+                                disabled={!game.gameUrl}
+                                className="bg-[#ff2f7a] hover:bg-[#ff2f7a]/90 text-white rounded-full w-8 h-8 shadow-lg transition-all hover:scale-110 active:scale-95 flex items-center justify-center p-0 shrink-0"
+                            >
+                                <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
+                            </Button>
                         </div>
                     </motion.div>
                 ))}

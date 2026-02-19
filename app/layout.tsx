@@ -5,7 +5,6 @@ import "./globals.css";
 import { Providers } from "./providers";
 import { Sidebar } from "@/shared/ui/sidebar";
 import { Header } from "@/shared/ui/header";
-import { MobileNav } from "@/shared/ui/mobile-nav";
 import { Toaster } from "@/components/ui/toaster";
 import { UserActivityProvider } from "@/components/providers/user-activity-provider";
 import { MobileBlocker } from "@/components/ui/mobile-blocker";
@@ -40,7 +39,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark overflow-x-hidden">
+    <html lang="en" className="dark">
       <body className={`${geistSans.variable} ${jetBrainsMono.variable} antialiased bg-background text-foreground font-mono overflow-x-hidden w-full`}>
         <Providers>
           <UserActivityProvider>
@@ -51,10 +50,10 @@ export default function RootLayout({
 
             <div className="flex w-full overflow-x-hidden">
               <Sidebar />
-              <div className="flex-1 transition-all duration-300 ml-0 md:ml-[100px]">
+              <div className="flex-1 transition-all duration-300 ml-0 md:ml-[120px]">
                 <Header />
                 <main
-                  className="min-h-[calc(100vh-80px)] p-2 md:p-4 lg:p-6 relative"
+                  className="min-h-[calc(100vh-80px)] p-4 md:p-8 lg:p-10 relative"
                 >
                   {children}
                 </main>

@@ -54,11 +54,11 @@ export function StatsCards() {
                 <AnimatedCard key={stat.label} delay={index * 0.1}>
                     <div className="p-4 flex items-center justify-between">
                         <div>
-                            <p className="text-xs text-gray-400 uppercase tracking-wider font-medium">{stat.label}</p>
-                            <h3 className="text-2xl font-bold text-white mt-1 font-mono">
+                            <p className="text-piggy-label text-gray-400 uppercase tracking-tight font-medium">{stat.label}</p>
+                            <h3 className="text-piggy-title font-bold text-white mt-1 font-mono">
                                 {isLoading ? "..." : stat.value}
                             </h3>
-                            <p className="text-xs text-[var(--color-piggy-super-green)] mt-1">{stat.change} this week</p>
+                            <p className="text-piggy-label text-[var(--color-piggy-super-green)] mt-1">{stat.change} this week</p>
                         </div>
                         <div className={`p-3 rounded-full bg-white/5 ${stat.color}`}>
                             <stat.icon className="h-6 w-6" />

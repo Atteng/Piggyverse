@@ -128,6 +128,18 @@ export async function POST(
             const usdValue = await getUSDValue(token, actualAmountFinal);
             await incrementPrizePoolSeeded(session.user.id, usdValue);
 
+            // Update Tournament Prize Pool
+            // We increment both the seed and the total amount.
+            // Note: This assumes the seeded token matches the tournament's prize pool token.
+            // In a real app, we would handle multi-token pools or distinct balances.
+            await prisma.tournament.update({
+                where: { id: tournamentId },
+                data: {
+                    prizePoolSeed: { increment: actualAmountFinal },
+                    prizePoolAmount: { increment: actualAmountFinal }
+                }
+            });
+
             // Fetch final state for response
             const finalTournament = await prisma.tournament.findUnique({
                 where: { id: tournamentId }

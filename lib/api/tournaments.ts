@@ -14,6 +14,13 @@ export interface TournamentFrontend {
     isIncentivized: boolean;
     bettingAllowed: boolean;
     rules: string[];
+    activeMarketId?: string;
+    topOutcomes?: {
+        id: string;
+        label: string;
+        odds: number;
+    }[];
+    token: string;
 }
 
 interface APITournament {
@@ -37,6 +44,16 @@ interface APITournament {
     isIncentivized: boolean;
     allowBetting: boolean;
     rules: string | null;
+    bettingMarkets: {
+        id: string;
+        marketType: string;
+        status: string;
+        outcomes: {
+            id: string;
+            label: string;
+            currentOdds: number;
+        }[];
+    }[];
 }
 
 interface GetTournamentsResponse {
@@ -62,23 +79,44 @@ export async function getTournaments(status?: string, gameId?: string) {
 
     const data: GetTournamentsResponse = await response.json();
 
-    const tournaments: TournamentFrontend[] = data.tournaments.map((t) => ({
-        id: t.id,
-        game: t.game.title,
-        gameId: t.gameId,
-        name: t.name,
-        description: t.description,
-        registered: t.registeredPlayers,
-        maxPlayers: t.maxPlayers,
-        prizePool: t.prizePoolAmount ? `${t.prizePoolAmount.toLocaleString()} ${t.prizePoolToken || "$TOKEN"}` : "None",
-        entryFee: t.entryFeeAmount ? `${t.entryFeeAmount} ${t.entryFeeToken || "$TOKEN"}` : "Free",
-        status: t.status, // Map enum if needed, but strings are fine for now
-        startDate: t.startDate,
-        image: t.imageUrl || t.game.thumbnailUrl || "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=800&q=80",
-        isIncentivized: t.isIncentivized,
-        bettingAllowed: t.allowBetting,
-        rules: t.rules ? [t.rules] : [], // Frontend expects array
-    }));
+    const tournaments: TournamentFrontend[] = data.tournaments.map((t) => {
+        // Find the most relevant market for preview (e.g., WINNER or first OPEN one)
+        const activeMarket = t.bettingMarkets?.find(m => m.status === 'OPEN' || m.status === 'ACTIVE'); // 'ACTIVE' legacy check
+
+        let topOutcomes = undefined;
+        if (activeMarket) {
+            // Sort by odds (ascending usually implies favorites) or just take first few
+            // Use slice to limit to 4
+            topOutcomes = activeMarket.outcomes
+                .slice(0, 4)
+                .map(o => ({
+                    id: o.id,
+                    label: o.label,
+                    odds: o.currentOdds
+                }));
+        }
+
+        return {
+            id: t.id,
+            game: t.game.title,
+            gameId: t.gameId,
+            name: t.name,
+            description: t.description,
+            registered: t.registeredPlayers,
+            maxPlayers: t.maxPlayers,
+            prizePool: t.prizePoolAmount ? `${t.prizePoolAmount.toLocaleString()} ${t.prizePoolToken || "$TOKEN"}` : "None",
+            entryFee: t.entryFeeAmount ? `${t.entryFeeAmount} ${t.entryFeeToken || "$TOKEN"}` : "Free",
+            status: t.status,
+            startDate: t.startDate,
+            image: t.imageUrl || t.game.thumbnailUrl || "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=800&q=80",
+            isIncentivized: t.isIncentivized,
+            bettingAllowed: t.allowBetting,
+            rules: t.rules ? [t.rules] : [],
+            activeMarketId: activeMarket?.id,
+            topOutcomes,
+            token: t.prizePoolToken || 'USDC'
+        };
+    });
 
     return {
         tournaments,

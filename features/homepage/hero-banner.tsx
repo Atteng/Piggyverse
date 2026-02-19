@@ -60,14 +60,14 @@ export function HeroBanner() {
         return (
             <div className="relative w-full overflow-hidden rounded-2xl md:rounded-[3rem] min-h-[280px] lg:min-h-[320px] group flex flex-col justify-center px-8 md:px-20 py-7 md:py-12 bg-black/60 backdrop-blur-3xl border border-white/5">
                 <div className="relative z-10 flex flex-col items-start max-w-2xl">
-                    <div className="inline-block px-3 py-1 mb-1.5 md:mb-4 text-[10px] font-bold tracking-widest text-[#FF2F7A] bg-white rounded-full shadow-lg uppercase">
+                    <div className="inline-block px-3 py-1 mb-1.5 md:mb-4 text-piggy-title font-bold tracking-widest text-[#FF2F7A] bg-white rounded-full shadow-lg ">
                         Welcome to PiggyVerse
                     </div>
-                    <h1 className="text-3xl md:text-4xl lg:text-6xl font-black text-white leading-[0.9] mb-4 font-mono tracking-tighter drop-shadow-2xl uppercase">
+                    <h1 className="text-piggy-hero font-black text-white leading-[0.9] mb-4 font-mono tracking-tighter drop-shadow-2xl uppercase">
                         Play.<br />Compete.<br />Earn.
                     </h1>
                     <Link href="/library">
-                        <Button className="bg-[var(--color-piggy-deep-pink)] hover:bg-[var(--color-piggy-deep-pink)]/90 text-white rounded-xl px-8 h-12 text-sm font-bold shadow-lg transition-all hover:scale-105">
+                        <Button className="bg-[var(--color-piggy-deep-pink)] hover:bg-[var(--color-piggy-deep-pink)]/90 text-white rounded-xl px-8 h-12 text-piggy-body font-bold shadow-lg transition-all hover:scale-105">
                             Browse Games
                             <ArrowRight className="ml-2 h-4 w-4" />
                         </Button>
@@ -108,7 +108,7 @@ export function HeroBanner() {
                         className="relative z-20 flex flex-col items-start max-w-2xl h-full justify-center px-8 md:px-20 lg:px-24"
                     >
                         <div className="flex items-center gap-3 mb-1.5 md:mb-2">
-                            <div className="inline-block px-3 py-1 text-xs font-bold tracking-widest text-[#FF2F7A] bg-white rounded-full shadow-lg">
+                            <div className="inline-block px-3 py-1 text-piggy-label font-bold tracking-widest text-[#FF2F7A] bg-white rounded-full shadow-lg">
                                 Featured Game
                             </div>
                             <Link href={`/competitive-hub/${featuredGame.id}`}>
@@ -118,28 +118,28 @@ export function HeroBanner() {
                             </Link>
                         </div>
 
-                        <h1 className="text-3xl md:text-4xl lg:text-6xl font-black text-white leading-[0.9] mb-1.5 md:mb-2 font-mono tracking-tighter drop-shadow-2xl max-w-xl uppercase">
+                        <h1 className="text-piggy-hero font-black text-white leading-[0.9] mb-1.5 md:mb-2 font-mono tracking-tighter drop-shadow-2xl max-w-xl uppercase">
                             {featuredGame.title}
                         </h1>
 
-                        <p className="text-xs md:text-sm text-white/50 max-w-md mb-3 md:mb-5 font-medium leading-tight md:leading-relaxed">
+                        <p className="text-piggy-body text-white/50 max-w-md mb-3 md:mb-5 font-medium leading-tight">
                             {featuredGame.description || "Experience the next generation of competitive gaming in the PiggyVerse."}
                         </p>
 
                         <div className="flex items-center gap-6">
                             <div className="flex flex-col gap-0.5 items-start">
-                                <span className="text-white/20 text-[7px] font-bold tracking-[0.2em]">Available on</span>
+                                <span className="text-white/20 text-piggy-tiny font-bold tracking-[0.2em]">Available on</span>
                                 {featuredGame.platforms && featuredGame.platforms.length > 0 ? (
                                     <div className="flex gap-3">
                                         {featuredGame.platforms.map((platform) => (
-                                            <span key={platform} className="text-white/80 font-bold text-xs tracking-widest capitalize">
+                                            <span key={platform} className="text-white/80 font-bold text-piggy-body tracking-widest capitalize">
                                                 {platform}
                                             </span>
                                         ))}
                                     </div>
                                 ) : (
                                     <div className="flex gap-3">
-                                        <span className="text-white/80 font-bold text-xs tracking-widest">
+                                        <span className="text-white/80 font-bold text-piggy-body tracking-widest">
                                             Web
                                         </span>
                                     </div>

@@ -9,12 +9,12 @@ import { getOutcomeOdds, updateMarketWeights } from '@/lib/betting/odds-engine';
 export async function GET(request: NextRequest) {
     try {
         const session = await getServerSession(authOptions);
-        if (!session?.user?.email) {
+        if (!session?.user) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
         const user = await prisma.user.findUnique({
-            where: { email: session.user.email }
+            where: { id: (session.user as any).id }
         });
 
         if (!user) {
@@ -58,12 +58,12 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
     try {
         const session = await getServerSession(authOptions);
-        if (!session?.user?.email) {
+        if (!session?.user) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
         const user = await prisma.user.findUnique({
-            where: { email: session.user.email }
+            where: { id: (session.user as any).id }
         });
 
         if (!user) {
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json();
-        const { marketId, outcomeId, amount, token } = body;
+        const { marketId, outcomeId, amount, token, minOdds } = body;
 
         // Validate required fields
         if (!marketId || !outcomeId || !amount || !token) {
@@ -143,6 +143,20 @@ export async function POST(request: NextRequest) {
             }
         } else {
             oddsAtPlacement = outcome.weight;
+        }
+
+        // Validate Slippage Protection
+        if (minOdds !== undefined && minOdds !== null) {
+            const currentOdds = oddsAtPlacement || 0; // Treat null as 0 for safety
+            if (currentOdds < minOdds) {
+                return NextResponse.json(
+                    {
+                        error: `Odds changed to ${currentOdds.toFixed(2)} (Min: ${minOdds.toFixed(2)})`,
+                        code: 'SLIPPAGE'
+                    },
+                    { status: 409 }
+                );
+            }
         }
 
         // Create bet (PENDING status - waiting for blockchain confirmation)

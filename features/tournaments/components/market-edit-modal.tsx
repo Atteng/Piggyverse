@@ -121,15 +121,15 @@ export function MarketEditModal({ isOpen, onClose, market, tournamentId }: Marke
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="bg-[#1a1a1a] border-white/10 text-white max-w-lg max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                    <DialogTitle>Edit Market</DialogTitle>
-                    <DialogDescription>
+            <DialogContent className="bg-black/60 backdrop-blur-3xl border-white/10 text-white w-[95vw] max-w-lg rounded-[var(--radius-piggy-modal)] max-h-[90vh] overflow-y-auto px-6 py-8 gap-0">
+                <DialogHeader className="mb-6">
+                    <DialogTitle className="text-piggy-title font-black tracking-tighter">Edit Market</DialogTitle>
+                    <DialogDescription className="text-gray-400 text-piggy-label font-medium uppercase tracking-tight">
                         Modify market details.
                         {!canEditOutcomes && (
-                            <span className="block mt-2 text-yellow-500 flex items-center gap-2 text-xs">
-                                <AlertTriangle className="w-4 h-4" />
-                                Bets have been placed. Outcome editing is restricted.
+                            <span className="block mt-2 text-yellow-500 flex items-center gap-2 text-piggy-tiny">
+                                <AlertTriangle className="w-3 h-3" />
+                                Bets placed. Outcomes locked.
                             </span>
                         )}
                     </DialogDescription>
@@ -155,7 +155,7 @@ export function MarketEditModal({ isOpen, onClose, market, tournamentId }: Marke
                             <div className="flex items-center justify-between">
                                 <FormLabel>Outcomes</FormLabel>
                                 {market.marketType === 'weighted' && (
-                                    <Badge variant="outline" className="text-[10px] border-white/10 text-gray-400">
+                                    <Badge variant="outline" className="text-piggy-tiny border-white/10 text-gray-400">
                                         Weights determine payout multiplier
                                     </Badge>
                                 )}
@@ -172,7 +172,7 @@ export function MarketEditModal({ isOpen, onClose, market, tournamentId }: Marke
                                                     <Input
                                                         {...field}
                                                         placeholder="Label"
-                                                        className="bg-black/20 border-white/10 h-9 text-sm"
+                                                        className="bg-black/20 border-white/10 h-9 text-piggy-body"
                                                         // Disable if bets placed, to prevent changing "Yes" to "No" trickery
                                                         disabled={!canEditOutcomes}
                                                     />
@@ -194,7 +194,7 @@ export function MarketEditModal({ isOpen, onClose, market, tournamentId }: Marke
                                                             type="number"
                                                             step="0.1"
                                                             placeholder="W"
-                                                            className="bg-black/20 border-white/10 h-9 text-sm text-center"
+                                                            className="bg-black/20 border-white/10 h-9 text-piggy-body text-center"
                                                             disabled={!canEditOutcomes}
                                                         />
                                                     </FormControl>
@@ -207,7 +207,7 @@ export function MarketEditModal({ isOpen, onClose, market, tournamentId }: Marke
                             ))}
 
                             {!canEditOutcomes && (
-                                <p className="text-[10px] text-gray-500 italic text-center">
+                                <p className="text-piggy-tiny text-gray-500 italic text-center">
                                     Outcomes cannot be modified after bets are placed.
                                 </p>
                             )}

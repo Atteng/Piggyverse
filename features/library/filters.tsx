@@ -14,9 +14,9 @@ export function LibraryFilters() {
                 {categories.map((category, i) => (
                     <button
                         key={category}
-                        className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${i === 0
-                                ? "bg-[var(--color-piggy-deep-pink)] text-white shadow-lg shadow-[var(--color-piggy-deep-pink)]/20"
-                                : "bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white border border-white/5"
+                        className={`px-4 py-2 rounded-full text-piggy-body font-medium whitespace-nowrap transition-all ${i === 0
+                            ? "bg-[var(--color-piggy-deep-pink)] text-white shadow-lg shadow-[var(--color-piggy-deep-pink)]/20"
+                            : "bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white border border-white/5"
                             }`}
                     >
                         {category}
@@ -31,7 +31,7 @@ export function LibraryFilters() {
                     <input
                         type="text"
                         placeholder="Search library..."
-                        className="w-full bg-black/20 border border-white/10 rounded-full py-2 pl-9 pr-4 text-sm text-white focus:outline-none focus:border-[var(--color-piggy-deep-pink)] transition-colors"
+                        className="w-full bg-black/20 border border-white/10 rounded-full py-2 pl-9 pr-4 text-piggy-body text-white focus:outline-none focus:border-[var(--color-piggy-deep-pink)] transition-colors"
                     />
                 </div>
                 <Button variant="outline" size="icon" className="shrink-0 border-white/10 text-gray-400 hover:text-white hover:bg-white/5 rounded-full">

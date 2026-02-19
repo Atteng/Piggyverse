@@ -41,7 +41,7 @@ export function ActiveTournamentsWidget() {
         return (
             <div className="bg-black/60 backdrop-blur-3xl border border-white/5 rounded-2xl md:rounded-[2.5rem] p-4 md:p-6 h-full flex flex-col items-center justify-center min-h-[300px]">
                 <Loader2 className="w-8 h-8 animate-spin text-[var(--color-piggy-deep-pink)] mb-2" />
-                <p className="text-white/40 font-mono text-xs uppercase tracking-widest">Loading tournaments...</p>
+                <p className="text-white/40 font-mono text-piggy-label uppercase tracking-widest">Loading tournaments...</p>
             </div>
         );
     }
@@ -51,15 +51,15 @@ export function ActiveTournamentsWidget() {
         return (
             <div className="bg-black/60 backdrop-blur-3xl border border-white/5 rounded-2xl md:rounded-[2.5rem] p-4 md:p-6 h-full flex flex-col">
                 <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-xl font-bold text-white font-mono uppercase tracking-tighter">Tournaments Active</h3>
+                    <h3 className="text-piggy-title font-bold text-white font-mono tracking-tighter">Tournaments Active</h3>
                 </div>
                 <div className="flex-1 flex flex-col items-center justify-center text-center p-6 space-y-4">
                     <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center">
                         <Trophy className="w-8 h-8 text-gray-500" />
                     </div>
                     <div>
-                        <h4 className="text-lg font-bold text-white font-mono">No Active Tournaments</h4>
-                        <p className="text-sm text-gray-400 mt-1 max-w-[200px] mx-auto">
+                        <h4 className="text-piggy-body font-bold text-white font-mono">No Active Tournaments</h4>
+                        <p className="text-piggy-label text-gray-400 mt-1 max-w-[200px] mx-auto">
                             Check back later or host your own tournament!
                         </p>
                     </div>
@@ -77,8 +77,8 @@ export function ActiveTournamentsWidget() {
     return (
         <div className="bg-black/60 backdrop-blur-3xl border border-white/5 rounded-2xl md:rounded-[2.5rem] p-4 md:p-6 h-full flex flex-col">
             <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold text-white font-mono uppercase tracking-tighter">Tournaments Active</h3>
-                <span className="text-[10px] font-black text-white/40 font-mono uppercase tracking-widest">
+                <h3 className="text-piggy-title font-bold text-white font-mono tracking-tighter">Tournaments Active</h3>
+                <span className="text-piggy-label font-black text-white/40 font-mono uppercase tracking-widest">
                     {currentIndex + 1} / {tournaments.length}
                 </span>
             </div>
@@ -96,7 +96,7 @@ export function ActiveTournamentsWidget() {
                     {/* Betting Badge (If Betting Allowed) */}
                     {currentTournament.bettingAllowed && (
                         <div className="absolute top-4 left-4 z-10">
-                            <span className="px-3 py-1 bg-black/60 backdrop-blur-md rounded-full text-sm font-bold text-gray-200 border border-white/10">
+                            <span className="px-3 py-1 bg-black/60 backdrop-blur-md rounded-full text-piggy-label font-bold text-gray-200 border border-white/10">
                                 Betting Allowed
                             </span>
                         </div>
@@ -104,7 +104,7 @@ export function ActiveTournamentsWidget() {
 
                     {/* Status Badge */}
                     <div className="absolute top-4 right-4 z-10">
-                        <span className="px-3 py-1 bg-black/60 backdrop-blur-md rounded-full text-sm font-bold text-gray-200 border border-white/10">
+                        <span className="px-3 py-1 bg-black/60 backdrop-blur-md rounded-full text-piggy-label font-bold text-gray-200 border border-white/10">
                             {currentTournament.status}
                         </span>
                     </div>
@@ -112,25 +112,25 @@ export function ActiveTournamentsWidget() {
                     {/* Content Overlay */}
                     <div className="absolute bottom-0 left-0 right-0 p-5 space-y-4">
                         <div>
-                            <h4 className="text-xl font-black text-white font-mono leading-tight mb-1">
+                            <h4 className="text-piggy-body font-black text-white font-mono leading-tight mb-1">
                                 {currentTournament.name}
                             </h4>
-                            <p className="text-sm font-bold text-gray-400">{currentTournament.game}</p>
+                            <p className="text-piggy-label font-bold text-gray-400">{currentTournament.game}</p>
                         </div>
 
                         <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2 text-gray-300 font-mono text-base font-bold">
+                            <div className="flex items-center gap-2 text-gray-300 font-mono text-piggy-body font-bold">
                                 <Users className="w-4 h-4" />
                                 <span>{currentTournament.registered.toLocaleString()}</span>
                             </div>
-                            <div className="flex items-center gap-2 text-[var(--color-piggy-deep-pink)] font-mono text-sm font-bold">
+                            <div className="flex items-center gap-2 text-[var(--color-piggy-deep-pink)] font-mono text-piggy-label font-bold">
                                 <Trophy className="w-4 h-4" />
                                 <span>{currentTournament.prizePool}</span>
                             </div>
                         </div>
 
                         <div className="pt-3 border-t border-white/10 flex items-center justify-between">
-                            <div className="font-mono text-sm text-gray-400">
+                            <div className="font-mono text-piggy-label text-gray-400">
                                 Entry: <span className="text-white font-bold ml-1">{currentTournament.entryFee}</span>
                             </div>
                         </div>

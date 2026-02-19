@@ -61,12 +61,37 @@ export async function POST(request: NextRequest) {
 
         // Transaction to update everything
         const resolvedMarket = await prisma.$transaction(async (tx) => {
-            // Update Market Status
+            // 1. Update Market Status
             const updatedMarket = await tx.bettingMarket.update({
                 where: { id: marketId },
                 data: {
                     status: 'SETTLED',
                     winningOutcomeId: outcomeId
+                }
+            });
+
+            // 2. Mark Winning Bets
+            await tx.bet.updateMany({
+                where: {
+                    marketId: marketId,
+                    outcomeId: outcomeId,
+                    status: 'CONFIRMED'
+                },
+                data: {
+                    status: 'WON'
+                }
+            });
+
+            // 3. Mark Losing Bets
+            await tx.bet.updateMany({
+                where: {
+                    marketId: marketId,
+                    outcomeId: { not: outcomeId },
+                    status: 'CONFIRMED'
+                },
+                data: {
+                    status: 'LOST',
+                    payoutAmount: 0
                 }
             });
 

@@ -39,12 +39,12 @@ export function TopPlayers() {
             {/* Header */}
             <div className="flex flex-col mb-1 md:mb-6 z-10">
                 <div className="flex items-center justify-between w-full">
-                    <h2 className="text-2xl font-black text-white font-mono tracking-tighter uppercase leading-[0.8]">Top Players</h2>
-                    <Link href="/competitive-hub" className="text-xs font-bold text-white/60 hover:text-white transition-colors flex items-center gap-1 group/link whitespace-nowrap shrink-0">
+                    <h2 className="text-piggy-title font-black text-white font-mono tracking-tighter leading-[0.8]">Top Players</h2>
+                    <Link href="/competitive-hub" className="text-piggy-label font-bold text-white/60 hover:text-white transition-colors flex items-center gap-1 group/link whitespace-nowrap shrink-0">
                         View All <ChevronRight className="w-3.5 h-3.5 transition-transform group-hover/link:translate-x-0.5" />
                     </Link>
                 </div>
-                <p className="text-sm text-white/40 font-medium leading-tight mt-1">
+                <p className="text-piggy-body text-white/40 font-medium leading-tight mt-1">
                     The best of the best to grace the piggyverse
                 </p>
             </div>
@@ -61,7 +61,7 @@ export function TopPlayers() {
                             <div className="relative aspect-square rounded-2xl bg-black border border-white/10 overflow-hidden group-hover:border-[var(--color-piggy-deep-pink)] transition-all shadow-lg">
                                 <Avatar className="w-full h-full rounded-none">
                                     <AvatarImage src={player.avatar || ""} className="object-cover" />
-                                    <AvatarFallback className="bg-white/5 text-[10px] font-bold text-white/40 rounded-none">
+                                    <AvatarFallback className="bg-white/5 text-piggy-tiny font-bold text-white/40 rounded-none">
                                         {player.username?.[0] || "?"}
                                     </AvatarFallback>
                                 </Avatar>
@@ -69,7 +69,7 @@ export function TopPlayers() {
                                 {/* Hover Score Overlay */}
                                 {hoveredPlayer === player.username && (
                                     <div className="absolute inset-0 bg-black/80 flex items-center justify-center animate-in fade-in zoom-in duration-200">
-                                        <span className="text-[10px] font-bold text-white tracking-widest uppercase">
+                                        <span className="text-piggy-tiny font-bold text-white tracking-widest uppercase">
                                             {player.effortScore}
                                         </span>
                                     </div>
@@ -81,7 +81,7 @@ export function TopPlayers() {
             ) : (
                 <div className="flex-1 flex flex-col items-center justify-center text-white/20 gap-4">
                     <Users className="w-12 h-12 opacity-20" />
-                    <p className="font-mono text-sm tracking-widest">No players yet</p>
+                    <p className="font-mono text-piggy-body tracking-widest">No players yet</p>
                 </div>
             )}
         </div>

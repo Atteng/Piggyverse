@@ -39,7 +39,7 @@ export function StreamPlayer({ stream }: StreamPlayerProps) {
                 <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
                     <VolumeX className="w-8 h-8 text-gray-500" />
                 </div>
-                <h3 className="text-xl font-bold text-white mb-2">Stream Offline</h3>
+                <h3 className="text-piggy-title font-bold text-white mb-2">Stream Offline</h3>
                 <p className="text-gray-400">Tune in later for the next tournament!</p>
             </div>
         );
@@ -61,7 +61,7 @@ export function StreamPlayer({ stream }: StreamPlayerProps) {
                 <div className="absolute top-3 left-3 z-20">
                     <div className="flex items-center gap-1.5 px-2.5 py-1 bg-red-600 rounded-full">
                         <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
-                        <span className="text-white font-bold text-[10px] uppercase tracking-wide">LIVE</span>
+                        <span className="text-white font-bold text-piggy-tiny uppercase tracking-wide">LIVE</span>
                     </div>
                 </div>
 
@@ -69,7 +69,7 @@ export function StreamPlayer({ stream }: StreamPlayerProps) {
                 <div className="absolute top-3 right-3 z-20">
                     <div className="flex items-center gap-1.5 px-2.5 py-1 bg-black/60 backdrop-blur-md rounded-full border border-white/10">
                         <Eye className="w-3 h-3 text-white" />
-                        <span className="text-white font-bold text-xs">{viewerCount.toLocaleString()}</span>
+                        <span className="text-white font-bold text-piggy-label">{viewerCount.toLocaleString()}</span>
                     </div>
                 </div>
 
@@ -137,16 +137,16 @@ export function StreamPlayer({ stream }: StreamPlayerProps) {
 
             {/* Stream Info - Always visible */}
             <div className="p-4 space-y-2 flex-shrink-0 bg-black/60 backdrop-blur-3xl">
-                <h1 className="text-xl font-black text-[var(--color-piggy-deep-pink)] font-mono tracking-tight">
+                <h1 className="text-piggy-title font-black text-[var(--color-piggy-deep-pink)] font-mono tracking-tight">
                     {stream.title}
                 </h1>
                 <div className="flex items-center gap-2">
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center flex-shrink-0">
-                        <span className="text-white font-bold text-xs">{stream.channelName[0].toUpperCase()}</span>
+                        <span className="text-white font-bold text-piggy-tiny">{stream.channelName[0].toUpperCase()}</span>
                     </div>
                     <div className="min-w-0">
-                        <p className="text-white font-bold font-mono text-sm">{stream.channelName}</p>
-                        <p className="text-gray-400 text-xs font-mono">{viewerCount.toLocaleString()} watching now</p>
+                        <p className="text-white font-bold font-mono text-piggy-body">{stream.channelName}</p>
+                        <p className="text-gray-400 text-piggy-label font-mono">{viewerCount.toLocaleString()} watching now</p>
                     </div>
                 </div>
             </div>

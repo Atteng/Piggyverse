@@ -190,15 +190,15 @@ export function TournamentEditModal({ isOpen, onClose, tournament }: TournamentE
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="bg-black/60 backdrop-blur-3xl border-white/10 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                    <DialogTitle>Edit Tournament</DialogTitle>
-                    <DialogDescription>
+            <DialogContent className="bg-black/60 backdrop-blur-3xl border-white/10 text-white w-[95vw] max-w-2xl rounded-[var(--radius-piggy-modal)] max-h-[90vh] overflow-y-auto px-6 py-8">
+                <DialogHeader className="mb-6">
+                    <DialogTitle className="text-piggy-title font-black tracking-tighter">Edit Tournament</DialogTitle>
+                    <DialogDescription className="text-gray-400 text-piggy-label font-medium uppercase tracking-tight">
                         Update the details for your tournament.
                         {tournamentStarted && (
                             <span className="block mt-2 text-yellow-500 flex items-center gap-2">
                                 <Lock className="w-4 h-4" />
-                                Tournament has started. Financial settings are locked.
+                                Started. Financials locked.
                             </span>
                         )}
                     </DialogDescription>
@@ -317,7 +317,7 @@ export function TournamentEditModal({ isOpen, onClose, tournament }: TournamentE
                             render={({ field }) => (
                                 <FormItem className="flex flex-row items-center justify-between rounded-lg border border-white/10 p-4 bg-black/20">
                                     <div className="space-y-0.5">
-                                        <FormLabel className="text-base">Private Tournament</FormLabel>
+                                        <FormLabel className="text-piggy-body">Private Tournament</FormLabel>
                                         <FormDescription className="text-white/60">
                                             Only visible to invited players
                                         </FormDescription>
@@ -334,10 +334,10 @@ export function TournamentEditModal({ isOpen, onClose, tournament }: TournamentE
 
                         {/* Time-Locked Fields */}
                         <div className="border-t border-white/10 pt-4 mt-6">
-                            <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
+                            <h3 className="text-piggy-body font-semibold mb-4 flex items-center gap-2">
                                 {tournamentStarted && <Lock className="w-4 h-4 text-yellow-500" />}
                                 Tournament Settings
-                                {tournamentStarted && <span className="text-xs text-yellow-500">(Locked)</span>}
+                                {tournamentStarted && <span className="text-piggy-label text-yellow-500">(Locked)</span>}
                             </h3>
 
                             <div className="grid grid-cols-2 gap-4">
@@ -387,8 +387,8 @@ export function TournamentEditModal({ isOpen, onClose, tournament }: TournamentE
                                     render={({ field }) => (
                                         <FormItem className="flex items-center justify-between space-y-0">
                                             <div>
-                                                <FormLabel className="text-white text-sm font-bold">Custom Registration Deadline</FormLabel>
-                                                <FormDescription className="text-[10px] text-gray-500">
+                                                <FormLabel className="text-white text-piggy-label font-bold">Custom Registration Deadline</FormLabel>
+                                                <FormDescription className="text-piggy-tiny text-gray-500">
                                                     Allow late entry or close registration early.
                                                 </FormDescription>
                                             </div>
@@ -409,12 +409,12 @@ export function TournamentEditModal({ isOpen, onClose, tournament }: TournamentE
                                             name="registrationDeadlineDate"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel className="text-[10px] text-gray-400">Deadline Date</FormLabel>
+                                                    <FormLabel className="text-piggy-tiny text-gray-400">Deadline Date</FormLabel>
                                                     <FormControl>
                                                         <Input
                                                             type="date"
                                                             {...field}
-                                                            className="h-9 bg-black/40 border-white/10 text-white text-xs [color-scheme:dark]"
+                                                            className="h-9 bg-black/40 border-white/10 text-white text-piggy-label [color-scheme:dark]"
                                                         />
                                                     </FormControl>
                                                     <FormMessage />
@@ -426,12 +426,12 @@ export function TournamentEditModal({ isOpen, onClose, tournament }: TournamentE
                                             name="registrationDeadlineTime"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel className="text-[10px] text-gray-400">Deadline Time</FormLabel>
+                                                    <FormLabel className="text-piggy-tiny text-gray-400">Deadline Time</FormLabel>
                                                     <FormControl>
                                                         <Input
                                                             type="time"
                                                             {...field}
-                                                            className="h-9 bg-black/40 border-white/10 text-white text-xs [color-scheme:dark]"
+                                                            className="h-9 bg-black/40 border-white/10 text-white text-piggy-label [color-scheme:dark]"
                                                         />
                                                     </FormControl>
                                                     <FormMessage />

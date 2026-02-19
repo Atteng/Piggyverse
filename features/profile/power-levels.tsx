@@ -79,8 +79,8 @@ export function PowerLevels() {
                                     <Icon className="w-5 h-5 text-white" />
                                 </div>
                                 <div>
-                                    <h3 className="text-sm font-bold text-white">{level.name}</h3>
-                                    <p className="text-xs text-white/50">Weight: {level.weight}</p>
+                                    <h3 className="text-piggy-body font-bold text-white">{level.name}</h3>
+                                    <p className="text-piggy-label text-white/50">Weight: {level.weight}</p>
                                 </div>
                             </div>
                         </div>
@@ -88,8 +88,8 @@ export function PowerLevels() {
                         {/* Score Display */}
                         <div className="mb-3">
                             <div className="flex items-baseline gap-2">
-                                <span className="text-3xl font-bold text-white">{level.score}</span>
-                                <span className="text-sm text-white/40">/ {level.max}</span>
+                                <span className="text-piggy-hero font-bold text-white">{level.score}</span>
+                                <span className="text-piggy-label text-white/40">/ {level.max}</span>
                             </div>
                         </div>
 
@@ -105,7 +105,7 @@ export function PowerLevels() {
                         </div>
 
                         {/* Percentage */}
-                        <p className="text-xs text-white/50 mt-2 text-right">{level.percentage.toFixed(1)}%</p>
+                        <p className="text-piggy-label text-white/50 mt-2 text-right">{level.percentage.toFixed(1)}%</p>
                     </div>
                 );
             })}

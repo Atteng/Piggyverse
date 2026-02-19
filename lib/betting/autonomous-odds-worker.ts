@@ -1,18 +1,18 @@
 /**
- * Autonomous Odds Worker — Phase 1
+ * Autonomous Odds Worker — Phase 2
  * 
  * Periodically polls PokerNow for active autonomous tournaments.
  * Updates BettingMarket.lastSyncedHand and triggers OddsEngine.updateMarketWeights.
- * 
- * NOTE: This is designed to run as a background job or a scheduled task (e.g., cron or simple interval in dev).
+ * Uses DRE Compiler to detect game completion and propose winners.
  */
 
 import { prisma } from '@/lib/prisma';
 import { pokerVerifier } from '@/lib/poker-verifier';
 import { updateMarketWeights } from './odds-engine';
+import { dreCompiler } from './dre-compiler';
+import { ResolutionStatus, MarketStatus } from '@prisma/client';
 
 const POLL_INTERVAL_MS = 10000; // 10 seconds
-const BATCH_SIZE = 10; // Max hands to process per cycle
 
 export class AutonomousOddsWorker {
     private isRunning = false;
@@ -70,6 +70,9 @@ export class AutonomousOddsWorker {
                     where: {
                         status: 'OPEN',
                         isAutonomous: true
+                    },
+                    include: {
+                        outcomes: true
                     }
                 }
             }
@@ -80,8 +83,6 @@ export class AutonomousOddsWorker {
         console.log(`Processing ${tournaments.length} active autonomous tournaments...`);
 
         for (const tournament of tournaments) {
-            // Need to cast or adjust logic because Prisma types can be tricky with partial includes
-            // The include above guarantees bettingMarkets exists and has the fields we need
             await this.syncTournamentLogs(
                 tournament.id,
                 (tournament as any).tableId,
@@ -99,24 +100,15 @@ export class AutonomousOddsWorker {
             const latestHand = await pokerVerifier.findLastHand(tableId);
 
             // 2. Determine the lowest lastSyncedHand among all markets
-            // We process from the oldest sync point to ensure no gaps
             const minSyncedHand = Math.min(...markets.map((m: any) => m.lastSyncedHand || 0));
 
             if (latestHand <= minSyncedHand) {
-                // No new hands
                 return;
             }
 
             console.log(`Tournament ${tournamentId}: Found new hands (Current: ${latestHand}, Synced: ${minSyncedHand})`);
 
-            // 3. Process new hands (just updating the counter for now, logic triggers on hand completion)
-            // In Phase 2, we would feed these logs to the AI/Compiler.
-            // In Phase 1, we simply acknowledge that "time has passed" and odds might need re-checking if correlated to hand count.
-
-            // However, Parimutuel odds change based on *Bets*, not strictly *Hands*.
-            // But we update the 'lastSyncedHand' to track game progress for the UI.
-
-            // For Phase 1, we just update the markets to the latest hand
+            // 3. Update Sync Progress
             await prisma.bettingMarket.updateMany({
                 where: {
                     id: { in: markets.map((m: any) => m.id) }
@@ -127,10 +119,59 @@ export class AutonomousOddsWorker {
             });
 
             // 4. Trigger Odds Recalculation (Parimutuel)
-            // Even though parimutuel odds update on bets, we trigger a recalc here to ensure consistency
-            // and to handle any future logic that depends on game state.
             for (const market of markets) {
                 await updateMarketWeights(market.id);
+            }
+
+            // 5. Phase 2 & 3: DRE Analysis (Check for Winner OR Anti-Sniping Pause)
+            const result = await dreCompiler.compileGameResult(tableId, latestHand);
+
+            // AUTO-PAUSE (Anti-Sniping)
+            if (result.isPaused) {
+                console.log(`[DRE] High Volatility Detected (All-In). Pausing markets for Tournament ${tournamentId}`);
+
+                // Pause all open markets for this tournament
+                await prisma.bettingMarket.updateMany({
+                    where: {
+                        id: { in: markets.map((m: any) => m.id) },
+                        status: 'OPEN'
+                    },
+                    data: {
+                        isPaused: true,
+                        suspensionReason: result.reasoning || "High Volatility Event"
+                    }
+                });
+
+                // Skip further processing this tick
+                return;
+            }
+
+            if (result.status === 'COMPLETED' && result.winner) {
+                console.log(`[DRE] Game Completed for Tournament ${tournamentId}. Winner: ${result.winner}`);
+
+                // For each market, find the matching outcome
+                for (const market of markets) {
+                    // Simple string matching for now. 
+                    const winningOutcome = market.outcomes.find((o: any) =>
+                        o.label.toLowerCase() === result.winner!.toLowerCase()
+                    );
+
+                    if (winningOutcome) {
+                        console.log(`[DRE] Proposing winner for market ${market.id}: ${winningOutcome.label} (${winningOutcome.id})`);
+
+                        await prisma.bettingMarket.update({
+                            where: { id: market.id },
+                            data: {
+                                status: MarketStatus.CLOSED, // Stop betting
+                                resolutionStatus: ResolutionStatus.PROPOSED,
+                                aiProposedWinnerId: winningOutcome.id,
+                                resolverDSL: result.resolverDSL ?? result.reasoning ?? null,
+                            }
+                        });
+                    } else {
+                        console.warn(`[DRE] Winner "${result.winner}" not found in market ${market.id} outcomes.`);
+                    }
+                }
             }
 
             console.log(`Updated odds for ${markets.length} markets in Tournament ${tournamentId}`);

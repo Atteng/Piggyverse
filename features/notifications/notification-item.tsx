@@ -77,17 +77,17 @@ export function NotificationItem({ notification }: NotificationItemProps) {
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-4 mb-2">
                         <h3 className={cn(
-                            "text-sm font-black font-mono tracking-tighter leading-[0.7] truncate uppercase",
+                            "text-piggy-body font-black font-mono tracking-tighter leading-[0.7] truncate uppercase",
                             notification.read ? "text-white/60" : "text-white"
                         )}>
                             {notification.title}
                         </h3>
-                        <span className="text-[9px] font-mono font-bold text-white/20 whitespace-nowrap shrink-0 uppercase tracking-widest">
+                        <span className="text-piggy-tiny font-mono font-bold text-white/20 whitespace-nowrap shrink-0 uppercase tracking-widest">
                             {formatTime(notification.timestamp)}
                         </span>
                     </div>
 
-                    <p className="text-[10px] text-white/40 font-medium leading-relaxed max-w-[95%] mb-2 break-words">
+                    <p className="text-piggy-label text-white/40 font-medium leading-relaxed max-w-[95%] mb-2 break-words">
                         {notification.message}
                     </p>
 
@@ -99,7 +99,7 @@ export function NotificationItem({ notification }: NotificationItemProps) {
                                     <Button
                                         size="sm"
                                         variant="ghost"
-                                        className="h-7 px-3 bg-white/5 border border-white/10 hover:bg-white/10 text-white text-[10px] font-black rounded-full transition-all active:scale-95 flex items-center gap-1.5 uppercase tracking-widest"
+                                        className="h-7 px-3 bg-white/5 border border-white/10 hover:bg-white/10 text-white text-piggy-tiny font-black rounded-full transition-all active:scale-95 flex items-center gap-1.5 uppercase tracking-widest"
                                     >
                                         {notification.actionLabel}
                                         <ChevronRight className="w-2.5 h-2.5 opacity-50 transition-transform group-hover/btn:translate-x-0.5" />
@@ -109,9 +109,9 @@ export function NotificationItem({ notification }: NotificationItemProps) {
 
                             {notification.amount && (
                                 <div className="flex items-center gap-1.5 px-3 py-1 bg-black/20 border border-white/5 rounded-full">
-                                    <span className="text-[9px] text-white/20 font-black uppercase tracking-widest">Prize</span>
+                                    <span className="text-piggy-tiny text-white/20 font-black uppercase tracking-widest">Prize</span>
                                     <div className="w-px h-2.5 bg-white/10" />
-                                    <span className="text-[var(--color-piggy-deep-pink)] font-mono text-[10px] font-black">
+                                    <span className="text-[var(--color-piggy-deep-pink)] font-mono text-piggy-tiny font-black">
                                         {notification.amount.toLocaleString()}
                                     </span>
                                 </div>

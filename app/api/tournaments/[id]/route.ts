@@ -114,38 +114,31 @@ export async function GET(
             }
         }
         // -----------------------------------------------------------------------
-        // --- SELF-HEALING: Sync Prize Pool Amount ---
-        if (tournament.isIncentivized) {
-            const confirmedRegs = tournament.registrations.filter((r: any) => r.paymentStatus === 'COMPLETED');
-            const totalRevenue = confirmedRegs.reduce((acc: number, r: any) => acc + (r.expectedAmount || 0), 0);
+        // --- PRIZE POOL CALCULATION: Use centralized logic ---
+        const { calculateLivePrizePool } = await import('@/lib/tournaments');
+        const livePrizePool = calculateLivePrizePool(tournament as any);
 
-            // If seed is null (legacy), we assume seed = currentPool - revenue (min 0)
-            let currentSeed = (tournament as any).prizePoolSeed;
-            if (currentSeed === null || currentSeed === undefined) {
-                currentSeed = Math.max(0, (tournament.prizePoolAmount || 0) - totalRevenue);
-                // Save it for future loads
-                await prisma.tournament.update({
-                    where: { id: params.id },
-                    data: { prizePoolSeed: currentSeed }
-                });
-                (tournament as any).prizePoolSeed = currentSeed;
-            }
+        // Override the returned object's prizePoolAmount with the live calculation
+        // We do NOT write back to DB here to avoid race conditions on read
+        (tournament as any).prizePoolAmount = livePrizePool;
+        // -----------------------------------------------------------------------
+        // --- ODDS CALCULATION: Inject currentOdds into outcomes ---
+        const { calculateCurrentOdds } = await import('@/lib/betting');
+        const marketsWithOdds = tournament.bettingMarkets.map(market => ({
+            ...market,
+            outcomes: market.outcomes.map(outcome => ({
+                ...outcome,
+                currentOdds: calculateCurrentOdds(market, outcome)
+            }))
+        }));
 
-            const livePool = currentSeed + totalRevenue;
-            const epsilon = 0.000001;
-
-            if (Math.abs((tournament.prizePoolAmount || 0) - livePool) > epsilon) {
-                await prisma.tournament.update({
-                    where: { id: params.id },
-                    data: { prizePoolAmount: livePool }
-                });
-                // Update local object for response
-                tournament.prizePoolAmount = livePool;
-            }
-        }
+        const tournamentWithOdds = {
+            ...tournament,
+            bettingMarkets: marketsWithOdds
+        };
         // -----------------------------------------------------------------------
 
-        return NextResponse.json(tournament);
+        return NextResponse.json(tournamentWithOdds);
     } catch (error) {
         console.error('Error fetching tournament:', error);
         return NextResponse.json(

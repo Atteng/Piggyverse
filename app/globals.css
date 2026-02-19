@@ -50,6 +50,28 @@
   --color-piggy-brown: #231613;
   --color-piggy-super-green: #9ce500;
   --color-piggy-pale-green: #8cbc75;
+
+  --radius-piggy-modal: 2rem;
+}
+
+/* PiggyVerse Typography Scale */
+:root {
+  --font-size-piggy-hero: 48px;
+  --font-size-piggy-title: 24px;
+  --font-size-piggy-body: 16px;
+  --font-size-piggy-label: 10px;
+  --font-size-piggy-tiny: 8px;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --font-size-piggy-hero: 48px;
+    --font-size-piggy-title: 24px;
+    --font-size-piggy-body: 16px;
+    --font-size-piggy-label: 12px;
+    --font-size-piggy-tiny: 8px;
+    --radius-piggy-modal: 1.5rem;
+  }
 }
 
 :root {
@@ -128,5 +150,47 @@
 
   body {
     @apply bg-background text-foreground;
+    letter-spacing: -0.025em;
+  }
+}
+
+/* PiggyVerse Typography Utility Classes */
+/* Defined explicitly because Tailwind 4 does not generate rules for text-[var(--*)] */
+@layer utilities {
+  .text-piggy-hero {
+    font-size: var(--font-size-piggy-hero);
+  }
+
+  .text-piggy-title {
+    font-size: var(--font-size-piggy-title);
+  }
+
+  .text-piggy-body {
+    font-size: var(--font-size-piggy-body);
+  }
+
+  .text-piggy-label {
+    font-size: var(--font-size-piggy-label);
+  }
+
+  .text-piggy-tiny {
+    font-size: var(--font-size-piggy-tiny);
+  }
+
+  .text-piggy-pink {
+    color: #ff2f7a !important;
+  }
+
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  .simple-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Hide scrollbar for IE, Edge and Firefox */
+  .simple-scrollbar {
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
   }
 }

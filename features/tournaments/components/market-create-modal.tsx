@@ -131,18 +131,18 @@ export function MarketCreateModal({ isOpen, onClose, tournamentId }: MarketCreat
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="bg-[#1a1a1a] border-white/10 text-white max-w-lg max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                    <DialogTitle className="text-xl font-mono uppercase tracking-widest text-[var(--color-piggy-deep-pink)]">
+            <DialogContent className="bg-black/60 backdrop-blur-3xl border-white/10 text-white w-[95vw] max-w-lg rounded-[var(--radius-piggy-modal)] max-h-[90vh] overflow-y-auto px-6 py-8 gap-0">
+                <DialogHeader className="mb-6">
+                    <DialogTitle className="text-piggy-title font-black tracking-tighter text-[var(--color-piggy-deep-pink)]">
                         Create New Market
                     </DialogTitle>
-                    <DialogDescription className="text-gray-400">
+                    <DialogDescription className="text-gray-400 text-piggy-label font-medium uppercase tracking-tight">
                         Add a new betting event to this tournament.
                     </DialogDescription>
                 </DialogHeader>
 
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                         <FormField
                             control={form.control}
                             name="marketType"
@@ -265,7 +265,7 @@ export function MarketCreateModal({ isOpen, onClose, tournamentId }: MarketCreat
                                                         <Input
                                                             {...field}
                                                             placeholder="Outcome Label (e.g. Player A)"
-                                                            className="bg-black/20 border-white/10 h-10 text-sm"
+                                                            className="bg-black/20 border-white/10 h-10 text-piggy-body"
                                                             disabled={watchMarketType === "BINARY"}
                                                         />
                                                     </FormControl>
@@ -286,7 +286,7 @@ export function MarketCreateModal({ isOpen, onClose, tournamentId }: MarketCreat
                                                                 type="number"
                                                                 step="0.1"
                                                                 placeholder="Odds"
-                                                                className="bg-black/20 border-white/10 h-10 text-sm text-center"
+                                                                className="bg-black/20 border-white/10 h-10 text-piggy-body text-center"
                                                             />
                                                         </FormControl>
                                                         <FormMessage />

@@ -11,6 +11,7 @@ export async function placeBet(data: {
     outcomeId: string;
     amount: number;
     token: string;
+    minOdds?: number;
 }) {
     const res = await fetch('/api/betting/bets', {
         method: 'POST',

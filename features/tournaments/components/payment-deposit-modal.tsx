@@ -151,26 +151,26 @@ export function PaymentDepositModal({
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="bg-black/90 border-white/10 text-white sm:max-w-md">
-                <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2">
+            <DialogContent className="bg-black/60 backdrop-blur-3xl border-white/10 text-white w-[95vw] max-w-md rounded-[var(--radius-piggy-modal)] gap-0 overflow-hidden">
+                <DialogHeader className="pt-8 px-4 sm:px-6">
+                    <DialogTitle className="flex items-center gap-2 text-piggy-title font-black tracking-tighter">
                         {step === 'success' ? (
                             <span className="text-green-400">Registration Complete</span>
                         ) : (
                             <span>Secure Payment</span>
                         )}
                     </DialogTitle>
-                    <DialogDescription className="text-gray-400">
+                    <DialogDescription className="text-gray-400 text-piggy-label font-medium uppercase tracking-tight">
                         Follow the steps below to pay the entry fee.
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="space-y-6 py-4">
+                <div className="space-y-6 px-4 py-6 sm:px-6 overflow-hidden">
                     {/* LOADING INTENT */}
                     {step === 'intent' && (
                         <div className="flex flex-col items-center justify-center p-8 space-y-4">
                             <Loader2 className="w-10 h-10 animate-spin text-[var(--color-piggy-deep-pink)]" />
-                            <p className="text-sm text-gray-400">Generating unique payment ID...</p>
+                            <p className="text-piggy-body text-gray-400">Generating unique payment ID...</p>
                         </div>
                     )}
 
@@ -179,38 +179,41 @@ export function PaymentDepositModal({
                         <div className="space-y-6 animate-in fade-in duration-300">
 
                             {/* Warning Box */}
-                            <div className="bg-yellow-500/10 border border-yellow-500/20 p-4 rounded-xl flex gap-3 text-sm text-yellow-200">
-                                <Info className="w-5 h-5 shrink-0" />
-                                <div>
-                                    <p className="font-bold">Send logic:</p>
-                                    <p className="opacity-80">You MUST send the <strong>EXACT amount</strong> shown below. We use the decimals to identify you.</p>
+                            <div className="bg-yellow-500/10 border border-yellow-500/20 p-4 rounded-xl flex gap-3 text-piggy-label text-yellow-200">
+                                <Info className="w-4 h-4 shrink-0 mt-0.5" />
+                                <div className="leading-snug">
+                                    <p className="font-black uppercase tracking-tight mb-1 text-piggy-label">Send logic:</p>
+                                    <p className="opacity-80">You MUST send the <strong>EXACT amount</strong> shown below. We use the exact decimals to identify your unique registration.</p>
                                 </div>
                             </div>
 
                             {/* Amount Display */}
-                            <div className="bg-white/5 p-4 rounded-xl border border-white/10 text-center space-y-2">
-                                <Label className="text-gray-400 uppercase text-xs tracking-wider">Send Exactly</Label>
-                                <div className="text-3xl font-black text-white flex items-center justify-center gap-2 font-mono">
-                                    {paymentDetails.amount.toFixed(4)} <span className="text-[var(--color-piggy-deep-pink)]">{entryFeeToken}</span>
-                                    <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => copyToClipboard(paymentDetails.amount.toString())}>
-                                        <Copy className="w-3 h-3" />
-                                    </Button>
+                            <div className="bg-white/5 p-4 rounded-2xl border border-white/10 text-center space-y-1 overflow-hidden">
+                                <Label className="text-gray-500 font-bold uppercase text-piggy-label tracking-widest">Send Exactly</Label>
+                                <div className="text-piggy-title sm:text-piggy-hero font-black text-white flex flex-wrap items-baseline justify-center gap-x-2 gap-y-1 font-mono leading-tight max-w-full">
+                                    <span className="break-all">{paymentDetails.amount.toFixed(4)}</span>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-[var(--color-piggy-deep-pink)]">{entryFeeToken}</span>
+                                        <Button size="icon" variant="ghost" className="h-8 w-8 text-gray-400 hover:text-white shrink-0 self-center" onClick={() => copyToClipboard(paymentDetails.amount.toString())}>
+                                            <Copy className="w-3.5 h-3.5" />
+                                        </Button>
+                                    </div>
                                 </div>
                             </div>
 
                             {/* Address Display */}
-                            <div className="space-y-2">
-                                <Label className="text-gray-400 text-xs">To Treasury Address</Label>
-                                <div className="flex gap-2">
+                            <div className="space-y-1.5 px-0 sm:px-1">
+                                <Label className="text-gray-500 font-bold uppercase text-piggy-label tracking-widest">To Treasury Address</Label>
+                                <div className="flex gap-2 max-w-full overflow-hidden">
                                     <Input
                                         readOnly
                                         value={paymentDetails.address.replace(/['"]/g, '').trim()}
-                                        className="font-mono text-xs bg-black/20 border-white/10 h-10"
+                                        className="font-mono text-piggy-body bg-black/40 border-white/10 h-10 px-3 tracking-tighter flex-1 min-w-0"
                                     />
                                     <Button
                                         size="icon"
                                         variant="outline"
-                                        className="shrink-0 border-white/10"
+                                        className="shrink-0 border-white/10 h-10 w-10"
                                         onClick={() => copyToClipboard(paymentDetails.address.replace(/['"]/g, '').trim())}
                                     >
                                         <Copy className="w-4 h-4" />
@@ -219,15 +222,17 @@ export function PaymentDepositModal({
                             </div>
 
                             {/* Hash Input */}
-                            <div className="space-y-2 pt-2 border-t border-white/10">
-                                <Label className="text-white font-bold">Paste Transaction Hash (TxID)</Label>
+                            <div className="space-y-1.5 pt-4 border-t border-white/10 px-0 sm:px-1">
+                                <div className="flex justify-between items-center mb-1 gap-4">
+                                    <Label className="text-gray-500 font-bold uppercase text-piggy-label tracking-widest whitespace-nowrap">Paste Transaction Hash</Label>
+                                    <span className="text-piggy-label text-gray-500 font-bold whitespace-nowrap">Expires: {timeLeft}</span>
+                                </div>
                                 <Input
                                     placeholder="0x..."
                                     value={txHash}
                                     onChange={(e) => setTxHash(e.target.value.replace(/['"]/g, '').trim())}
-                                    className="bg-black/20 border-white/10 focus:border-[var(--color-piggy-deep-pink)]"
+                                    className="bg-black/40 border-white/10 focus:border-[var(--color-piggy-deep-pink)] h-11 px-4 font-mono text-piggy-body"
                                 />
-                                <p className="text-xs text-gray-500 text-right">Expires in: {timeLeft}</p>
                             </div>
 
                             <Button
@@ -248,8 +253,8 @@ export function PaymentDepositModal({
                                 <CheckCircle2 className="w-8 h-8 text-green-500" />
                             </div>
                             <div className="text-center">
-                                <h3 className="text-xl font-bold text-white">Entry Confirmed!</h3>
-                                <p className="text-gray-400">Reference: {txHash.slice(0, 6)}...{txHash.slice(-4)}</p>
+                                <h3 className="text-piggy-title font-bold text-white">Entry Confirmed!</h3>
+                                <p className="text-piggy-body text-gray-400">Reference: {txHash.slice(0, 6)}...{txHash.slice(-4)}</p>
                             </div>
                         </div>
                     )}

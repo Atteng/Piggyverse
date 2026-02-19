@@ -111,25 +111,25 @@ export function SeedDepositModal({
                 setTimeout(reset, 300); // Reset after animation
             }
         }}>
-            <DialogContent className="bg-black/90 border-white/10 text-white sm:max-w-md">
-                <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2">
-                        <Coins className="w-5 h-5 text-[var(--color-piggy-deep-pink)]" />
+            <DialogContent className="bg-black/60 backdrop-blur-3xl border-white/10 text-white w-[95vw] max-w-md rounded-[var(--radius-piggy-modal)] gap-0">
+                <DialogHeader className="pt-8 px-6">
+                    <DialogTitle className="flex items-center gap-2 text-piggy-title font-black tracking-tighter">
+                        <Coins className="w-6 h-6 text-[var(--color-piggy-deep-pink)]" />
                         {step === 'success' ? "Seeding Successful" : "Seed Prize Pool"}
                     </DialogTitle>
-                    <DialogDescription className="text-gray-400">
+                    <DialogDescription className="text-gray-400 text-piggy-label font-medium uppercase tracking-tight">
                         {step === 'success'
-                            ? "Your contribution has been verified (on-chain)."
-                            : `Add funds to the prize pool for "${tournamentName}".`}
+                            ? "Verified (on-chain)."
+                            : `Add funds for "${tournamentName}".`}
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="space-y-6 py-4">
+                <div className="space-y-6 p-6">
                     {/* STEP 1: INPUT AMOUNT & TOKEN */}
                     {step === 'input' && (
                         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
                             <div className="space-y-2">
-                                <Label>Select Token</Label>
+                                <Label className="text-gray-500 font-bold uppercase text-piggy-label tracking-widest">Select Token</Label>
                                 <Select value={token} onValueChange={setToken}>
                                     <SelectTrigger className="bg-black/20 border-white/10">
                                         <SelectValue placeholder="Select Token" />
@@ -143,20 +143,20 @@ export function SeedDepositModal({
                             </div>
 
                             <div className="space-y-2">
-                                <Label>Seeding Amount</Label>
+                                <Label className="text-gray-500 font-bold uppercase text-piggy-label tracking-widest">Seeding Amount</Label>
                                 <div className="relative">
                                     <Input
                                         type="number"
                                         placeholder="0.00"
                                         value={amount}
                                         onChange={(e) => setAmount(e.target.value)}
-                                        className="bg-black/20 border-white/10 pr-16 h-12 text-lg font-mono focus:border-[var(--color-piggy-deep-pink)]"
+                                        className="bg-black/20 border-white/10 pr-16 h-12 text-piggy-body font-mono focus:border-[var(--color-piggy-deep-pink)]"
                                     />
-                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-bold text-gray-500">
+                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-piggy-label font-bold text-gray-500">
                                         {token}
                                     </div>
                                 </div>
-                                <p className="text-xs text-gray-500">This amount will be added directly to the tournament's prize pool.</p>
+                                <p className="text-piggy-label text-gray-500">This amount will be added directly to the tournament's prize pool.</p>
                             </div>
 
                             <Button
@@ -173,22 +173,37 @@ export function SeedDepositModal({
                     {step === 'payment' && (
                         <div className="space-y-6 animate-in fade-in duration-300">
                             {/* Info Box */}
-                            <div className="bg-blue-500/10 border border-blue-500/20 p-4 rounded-xl flex gap-3 text-sm text-blue-200">
+                            <div className="bg-blue-500/10 border border-blue-500/20 p-4 rounded-xl flex gap-3 text-piggy-label text-blue-200">
                                 <Info className="w-5 h-5 shrink-0" />
                                 <div>
                                     <p className="font-bold">Instructions:</p>
-                                    <p className="opacity-80">Send exactly <strong>{amount} {token}</strong> to the Treasury address below, then paste the transaction hash.</p>
+                                    <div className="opacity-80 flex flex-wrap items-center gap-x-2">
+                                        <span>Send exactly</span>
+                                        <strong className="text-white">{amount}</strong>
+                                        <div className="flex items-center gap-1">
+                                            <strong className="text-[var(--color-piggy-deep-pink)]">{token}</strong>
+                                            <Button
+                                                size="icon"
+                                                variant="ghost"
+                                                className="h-6 w-6 text-gray-400 hover:text-white shrink-0"
+                                                onClick={() => copyToClipboard(amount)}
+                                            >
+                                                <Copy className="w-3 h-3" />
+                                            </Button>
+                                        </div>
+                                        <span>to the Treasury address below.</span>
+                                    </div>
                                 </div>
                             </div>
 
                             {/* Treasury Address */}
                             <div className="space-y-2">
-                                <Label className="text-gray-400 text-xs">Treasury Address (Base)</Label>
+                                <Label className="text-gray-500 font-bold uppercase text-piggy-label tracking-widest">Treasury Address (Base)</Label>
                                 <div className="flex gap-2">
                                     <Input
                                         readOnly
                                         value={TREASURY_ADDRESS}
-                                        className="font-mono text-xs bg-black/20 border-white/10 h-10"
+                                        className="font-mono text-piggy-body bg-black/20 border-white/10 h-10"
                                     />
                                     <Button
                                         size="icon"
@@ -203,12 +218,12 @@ export function SeedDepositModal({
 
                             {/* Hash Input */}
                             <div className="space-y-2 pt-2 border-t border-white/10">
-                                <Label className="text-white font-bold">Transaction Hash (TxID)</Label>
+                                <Label className="text-gray-500 font-bold uppercase text-piggy-label tracking-widest">Transaction Hash (TxID)</Label>
                                 <Input
                                     placeholder="0x..."
                                     value={txHash}
                                     onChange={(e) => setTxHash(e.target.value.trim())}
-                                    className="bg-black/20 border-white/10 focus:border-[var(--color-piggy-deep-pink)] h-12"
+                                    className="bg-black/20 border-white/10 focus:border-[var(--color-piggy-deep-pink)] h-12 text-piggy-body font-mono"
                                 />
                             </div>
 
@@ -240,8 +255,8 @@ export function SeedDepositModal({
                                 <CheckCircle2 className="w-8 h-8 text-green-500" />
                             </div>
                             <div className="text-center">
-                                <h3 className="text-xl font-bold text-white">Pot Seeded!</h3>
-                                <p className="text-gray-400">The prize pool has been updated.</p>
+                                <h3 className="text-piggy-title font-bold text-white">Pot Seeded!</h3>
+                                <p className="text-piggy-body text-gray-400">The prize pool has been updated.</p>
                             </div>
                         </div>
                     )}

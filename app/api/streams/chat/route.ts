@@ -35,22 +35,7 @@ export async function GET(req: Request) {
         console.error("Error fetching chat messages:", error);
 
         // Fallback to mock data if table doesn't exist
-        return NextResponse.json({
-            messages: [
-                {
-                    id: "msg_1",
-                    content: "This tournament is insane! 🔥",
-                    user: { username: "PiggyFan99", avatarUrl: null, globalRank: 15 },
-                    createdAt: new Date().toISOString()
-                },
-                {
-                    id: "msg_2",
-                    content: "Who do you think will win?",
-                    user: { username: "CryptoWhale", avatarUrl: null, globalRank: 5 },
-                    createdAt: new Date(Date.now() - 5000).toISOString() // 5s ago
-                }
-            ]
-        });
+        return NextResponse.json({ messages: [] });
     }
 }
 

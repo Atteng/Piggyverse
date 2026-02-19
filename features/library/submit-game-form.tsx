@@ -84,33 +84,33 @@ export function SubmitGameForm() {
     return (
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 bg-black/40 backdrop-blur-3xl p-6 md:p-8 rounded-3xl border border-white/5 shadow-2xl max-w-2xl">
             <div className="space-y-2">
-                <Label htmlFor="title" className="font-black font-mono uppercase tracking-widest text-[9px] text-white/70 ml-1">Game Title</Label>
+                <Label htmlFor="title" className="font-black font-mono uppercase tracking-widest text-piggy-tiny text-white/70 ml-1">Game Title</Label>
                 <Input {...form.register("title")} id="title" className="bg-black/40 border-white/5 text-white h-12 rounded-2xl focus:ring-1 focus:ring-white/10 transition-all placeholder:text-white/30" placeholder="e.g. Piggy Racer" />
-                {form.formState.errors.title && <p className="text-red-400 text-[10px] font-mono mt-1 ml-1">{form.formState.errors.title.message}</p>}
+                {form.formState.errors.title && <p className="text-red-400 text-piggy-tiny font-mono mt-1 ml-1">{form.formState.errors.title.message}</p>}
             </div>
 
             <div className="space-y-2">
-                <Label htmlFor="description" className="font-black font-mono uppercase tracking-widest text-[9px] text-white/70 ml-1">Description</Label>
+                <Label htmlFor="description" className="font-black font-mono uppercase tracking-widest text-piggy-tiny text-white/70 ml-1">Description</Label>
                 <Textarea {...form.register("description")} id="description" className="bg-black/40 border-white/5 text-white min-h-[120px] rounded-2xl focus:ring-1 focus:ring-white/10 transition-all placeholder:text-white/30" placeholder="What is your game about?" />
             </div>
 
             <div className="space-y-2">
-                <Label className="font-black font-mono uppercase tracking-widest text-[9px] text-white/70 ml-1">Thumbnail Image</Label>
+                <Label className="font-black font-mono uppercase tracking-widest text-piggy-tiny text-white/70 ml-1">Thumbnail Image</Label>
                 <ImageUpload
                     value={form.watch("thumbnailUrl") || ""}
                     onChange={(val) => form.setValue("thumbnailUrl", val)}
                 />
-                {form.formState.errors.thumbnailUrl && <p className="text-red-400 text-[10px] font-mono mt-1 ml-1">{form.formState.errors.thumbnailUrl.message}</p>}
+                {form.formState.errors.thumbnailUrl && <p className="text-red-400 text-piggy-tiny font-mono mt-1 ml-1">{form.formState.errors.thumbnailUrl.message}</p>}
             </div>
 
             <div className="space-y-2">
-                <Label htmlFor="gameUrl" className="font-black font-mono uppercase tracking-widest text-[9px] text-white/70 ml-1">Game URL (Where to play)</Label>
+                <Label htmlFor="gameUrl" className="font-black font-mono uppercase tracking-widest text-piggy-tiny text-white/70 ml-1">Game URL (Where to play)</Label>
                 <Input {...form.register("gameUrl")} id="gameUrl" className="bg-black/40 border-white/5 text-white h-12 rounded-2xl focus:ring-1 focus:ring-white/10 transition-all placeholder:text-white/30" placeholder="https://..." />
-                {form.formState.errors.gameUrl && <p className="text-red-400 text-[10px] font-mono mt-1 ml-1">{form.formState.errors.gameUrl.message}</p>}
+                {form.formState.errors.gameUrl && <p className="text-red-400 text-piggy-tiny font-mono mt-1 ml-1">{form.formState.errors.gameUrl.message}</p>}
             </div>
 
             <div className="space-y-3">
-                <Label className="font-black font-mono uppercase tracking-widest text-[9px] text-white/70 ml-1">Categories</Label>
+                <Label className="font-black font-mono uppercase tracking-widest text-piggy-tiny text-white/70 ml-1">Categories</Label>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-black/20 p-4 rounded-2xl border border-white/5">
                     {CATEGORIES.map((cat) => (
                         <div key={cat} className="flex items-center space-x-2">
@@ -123,15 +123,15 @@ export function SubmitGameForm() {
                                     else form.setValue("categories", current.filter(c => c !== cat));
                                 }}
                             />
-                            <Label htmlFor={`cat-${cat}`} className="text-[10px] font-bold text-white cursor-pointer uppercase tracking-tight">{cat}</Label>
+                            <Label htmlFor={`cat-${cat}`} className="text-piggy-tiny font-bold text-white cursor-pointer uppercase tracking-tight">{cat}</Label>
                         </div>
                     ))}
                 </div>
-                {form.formState.errors.categories && <p className="text-red-400 text-[10px] font-mono mt-1 ml-1">{form.formState.errors.categories.message}</p>}
+                {form.formState.errors.categories && <p className="text-red-400 text-piggy-tiny font-mono mt-1 ml-1">{form.formState.errors.categories.message}</p>}
             </div>
 
             <div className="space-y-3">
-                <Label className="font-black font-mono uppercase tracking-widest text-[9px] text-white/70 ml-1">Platforms</Label>
+                <Label className="font-black font-mono uppercase tracking-widest text-piggy-tiny text-white/70 ml-1">Platforms</Label>
                 <div className="flex flex-wrap gap-4 bg-black/20 p-4 rounded-2xl border border-white/5">
                     {PLATFORMS.map((plat) => (
                         <div key={plat} className="flex items-center space-x-2">
@@ -144,17 +144,17 @@ export function SubmitGameForm() {
                                     else form.setValue("platforms", current.filter(p => p !== plat));
                                 }}
                             />
-                            <Label htmlFor={`plat-${plat}`} className="text-[10px] font-bold text-white cursor-pointer uppercase tracking-tight">{plat}</Label>
+                            <Label htmlFor={`plat-${plat}`} className="text-piggy-tiny font-bold text-white cursor-pointer uppercase tracking-tight">{plat}</Label>
                         </div>
                     ))}
                 </div>
-                {form.formState.errors.platforms && <p className="text-red-400 text-[10px] font-mono mt-1 ml-1">{form.formState.errors.platforms.message}</p>}
+                {form.formState.errors.platforms && <p className="text-red-400 text-piggy-tiny font-mono mt-1 ml-1">{form.formState.errors.platforms.message}</p>}
             </div>
 
             <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-[var(--color-piggy-deep-pink)] hover:bg-[var(--color-piggy-deep-pink)]/90 text-white font-black h-12 rounded-2xl shadow-[0_0_20px_rgba(255,47,122,0.3)] transition-all hover:scale-[1.02] active:scale-[0.98] uppercase tracking-widest text-xs"
+                className="w-full bg-[var(--color-piggy-deep-pink)] hover:bg-[var(--color-piggy-deep-pink)]/90 text-white font-black h-12 rounded-2xl shadow-[0_0_20px_rgba(255,47,122,0.3)] transition-all hover:scale-[1.02] active:scale-[0.98] uppercase tracking-widest text-piggy-label"
             >
                 {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Submit App"}
             </Button>

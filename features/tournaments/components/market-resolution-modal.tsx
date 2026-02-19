@@ -56,22 +56,22 @@ export function MarketResolutionModal({ isOpen, onClose, market, tournamentId }:
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="bg-[#1a1a1a] border border-white/10 text-white sm:max-w-md">
-                <DialogHeader>
-                    <DialogTitle className="text-xl font-black uppercase tracking-tight flex items-center gap-2">
-                        <CheckCircle2 className="w-5 h-5 text-[var(--color-piggy-deep-pink)]" />
+            <DialogContent className="bg-black/60 backdrop-blur-3xl border border-white/10 text-white w-[95vw] max-w-md rounded-[var(--radius-piggy-modal)] gap-0">
+                <DialogHeader className="pt-8 px-6">
+                    <DialogTitle className="text-piggy-title font-black tracking-tighter flex items-center gap-2">
+                        <CheckCircle2 className="w-6 h-6 text-[var(--color-piggy-deep-pink)]" />
                         Resolve Market
                     </DialogTitle>
-                    <DialogDescription className="text-gray-400">
+                    <DialogDescription className="text-gray-400 text-piggy-label font-medium uppercase tracking-tight">
                         Select the winning outcome for: <br />
-                        <span className="text-white font-bold">"{market.marketQuestion}"</span>
+                        <span className="text-white font-black">"{market.marketQuestion}"</span>
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="py-4">
+                <div className="p-6">
                     <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3 mb-4 flex gap-3">
                         <AlertTriangle className="w-5 h-5 text-yellow-500 shrink-0" />
-                        <div className="text-xs text-yellow-200/80">
+                        <div className="text-piggy-label text-yellow-200/80">
                             <strong>Warning:</strong> This action cannot be undone. Once resolved, payouts are distributed immediately to winning bettors.
                         </div>
                     </div>
@@ -87,7 +87,7 @@ export function MarketResolutionModal({ isOpen, onClose, market, tournamentId }:
                                 <Label htmlFor={outcome.id} className="flex-1 cursor-pointer font-bold text-gray-200">
                                     {outcome.label}
                                 </Label>
-                                <span className="text-xs font-mono text-gray-500">
+                                <span className="text-piggy-label font-mono text-gray-500">
                                     {outcome.betCount} bets
                                 </span>
                             </div>

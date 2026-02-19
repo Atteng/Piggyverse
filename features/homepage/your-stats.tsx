@@ -91,7 +91,7 @@ export function YourStats() {
                                 !isExpanded && "hidden md:flex"
                             )}
                         >
-                            <span className="text-[10px] font-black text-white uppercase tracking-wider whitespace-nowrap">
+                            <span className="text-piggy-tiny font-black text-white uppercase tracking-tight whitespace-nowrap">
                                 {stat.label}
                             </span>
                         </motion.div>
@@ -112,7 +112,7 @@ export function YourStats() {
                                             damping: 30,
                                             opacity: { duration: 0.15 }
                                         }}
-                                        className="text-[10px] font-medium text-white/40 leading-relaxed flex-1 text-center md:text-left"
+                                        className="text-piggy-tiny font-medium text-white/40 leading-relaxed flex-1 text-center md:text-left"
                                     >
                                         {stat.description}
                                     </motion.p>
@@ -124,10 +124,10 @@ export function YourStats() {
                                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
                                 className="flex flex-col items-center justify-center shrink-0"
                             >
-                                <span className="text-3xl lg:text-4xl font-black text-white font-mono tracking-tighter leading-none">
+                                <span className="text-piggy-title font-black text-white font-mono tracking-tighter leading-tight">
                                     {stat.value}
                                 </span>
-                                <span className="text-[8px] font-black text-white/40 uppercase tracking-[0.2em] mt-2 text-center whitespace-nowrap">
+                                <span className="text-piggy-tiny font-black text-white/40 uppercase tracking-[0.2em] mt-2 text-center whitespace-nowrap">
                                     {stat.subLabel}
                                 </span>
                             </motion.div>
@@ -136,7 +136,7 @@ export function YourStats() {
                         {/* Vertical Label for Inactive Mobile State */}
                         {!isExpanded && (
                             <div className="absolute inset-0 flex items-center justify-center md:hidden pointer-events-none">
-                                <span className="text-[11px] font-black text-white uppercase tracking-[0.2em] [writing-mode:vertical-lr] rotate-180 whitespace-nowrap opacity-100">
+                                <span className="text-piggy-tiny font-black text-white uppercase tracking-[0.2em] [writing-mode:vertical-lr] rotate-180 whitespace-nowrap opacity-100">
                                     {stat.label}
                                 </span>
                             </div>

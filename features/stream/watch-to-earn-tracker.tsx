@@ -88,7 +88,7 @@ export function WatchToEarnTracker({ streamId }: WatchToEarnTrackerProps) {
             <div className="bg-black/40 px-3 py-1.5 border-b border-white/10">
                 <div className="flex items-center gap-2">
                     <Zap className="w-3.5 h-3.5 text-[var(--color-piggy-deep-pink)]" />
-                    <span className="text-white font-bold text-[10px] uppercase tracking-wider">Watch to Earn</span>
+                    <span className="text-white font-bold text-piggy-tiny uppercase tracking-tight">Watch to Earn</span>
                 </div>
             </div>
 
@@ -98,27 +98,27 @@ export function WatchToEarnTracker({ streamId }: WatchToEarnTrackerProps) {
                 <div className="text-center">
                     <div className="flex items-center justify-center gap-1 mb-0.5">
                         <Clock className="w-3 h-3 text-white/60" />
-                        <span className="text-[9px] text-white/60 uppercase tracking-wide">Time</span>
+                        <span className="text-piggy-tiny text-white/60 uppercase tracking-wide">Time</span>
                     </div>
-                    <span className="text-white font-bold text-base font-mono">{formatTime(watchTime)}</span>
+                    <span className="text-white font-bold text-piggy-body font-mono">{formatTime(watchTime)}</span>
                 </div>
 
                 {/* Points Earned */}
                 <div className="text-center border-x border-white/10">
                     <div className="flex items-center justify-center gap-1 mb-0.5">
                         <Award className="w-3 h-3 text-white/60" />
-                        <span className="text-[9px] text-white/60 uppercase tracking-wide">Points</span>
+                        <span className="text-piggy-tiny text-white/60 uppercase tracking-wide">Points</span>
                     </div>
-                    <span className="text-[var(--color-piggy-deep-pink)] font-bold text-base font-mono">{pointsEarned}</span>
+                    <span className="text-[var(--color-piggy-deep-pink)] font-bold text-piggy-body font-mono">{pointsEarned}</span>
                 </div>
 
                 {/* Current Streak */}
                 <div className="text-center">
                     <div className="flex items-center justify-center gap-1 mb-0.5">
                         <TrendingUp className="w-3 h-3 text-white/60" />
-                        <span className="text-[9px] text-white/60 uppercase tracking-wide">Streak</span>
+                        <span className="text-piggy-tiny text-white/60 uppercase tracking-wide">Streak</span>
                     </div>
-                    <span className="text-white font-bold text-base font-mono">{currentStreak}x</span>
+                    <span className="text-white font-bold text-piggy-body font-mono">{currentStreak}x</span>
                 </div>
             </div>
         </div>

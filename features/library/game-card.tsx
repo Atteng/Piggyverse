@@ -44,13 +44,13 @@ export function GameCard({ game }: GameCardProps) {
                         {/* Status Badges Overlay */}
                         <div className="absolute top-2 left-2 flex flex-col gap-1 z-20">
                             {game.tournamentStatus && (
-                                <div className="px-2.5 py-1 rounded-full bg-black/80 backdrop-blur-md border border-white/10 text-[7px] font-black text-white uppercase tracking-widest shadow-xl flex items-center gap-1.5">
+                                <div className="px-2.5 py-1 rounded-full bg-black/80 backdrop-blur-md border border-white/10 text-piggy-tiny font-black text-white uppercase tracking-widest shadow-xl flex items-center gap-1.5">
                                     <div className="w-1 h-1 rounded-full bg-[var(--color-piggy-deep-pink)] animate-pulse" />
                                     Tournament
                                 </div>
                             )}
                             {game.bettingAllowed && (
-                                <div className="px-2.5 py-1 rounded-full bg-black/80 backdrop-blur-md border border-white/10 text-[7px] font-black text-white uppercase tracking-widest shadow-xl flex items-center gap-1.5">
+                                <div className="px-2.5 py-1 rounded-full bg-black/80 backdrop-blur-md border border-white/10 text-piggy-tiny font-black text-white uppercase tracking-widest shadow-xl flex items-center gap-1.5">
                                     <div className="w-1 h-1 rounded-full bg-gray-400" />
                                     Betting
                                 </div>
@@ -64,22 +64,22 @@ export function GameCard({ game }: GameCardProps) {
                     <div className="min-w-0">
                         {/* Category & Uploader Info */}
                         <div className="flex items-center gap-2 mb-1">
-                            <span className="text-[9px] font-black text-[var(--color-piggy-deep-pink)] group-hover:text-black transition-colors uppercase tracking-widest truncate">
+                            <span className="text-piggy-label font-black text-[var(--color-piggy-deep-pink)] group-hover:text-black transition-colors uppercase tracking-widest truncate">
                                 {game.categories[0] || "Puzzle"}
                             </span>
                             <span className="text-white/20 group-hover:text-black/20">•</span>
-                            <span className="text-[9px] font-black text-white/40 group-hover:text-black/40 transition-colors uppercase tracking-widest truncate">
+                            <span className="text-piggy-label font-black text-white/40 group-hover:text-black/40 transition-colors uppercase tracking-widest truncate">
                                 {game.uploaderName || "Monster 18"}
                             </span>
                         </div>
 
                         {/* Title */}
-                        <h3 className="text-lg font-black text-white group-hover:text-black font-mono leading-none mb-2 tracking-tighter uppercase transition-colors truncate">
+                        <h3 className="text-piggy-title font-black text-white group-hover:text-black font-mono leading-none mb-2 tracking-tighter transition-colors truncate">
                             {game.title}
                         </h3>
 
                         {/* Description */}
-                        <p className="text-[12px] font-normal text-white/70 group-hover:text-black/70 transition-colors leading-snug line-clamp-4">
+                        <p className="text-piggy-body font-normal text-white/70 group-hover:text-black/70 transition-colors leading-snug line-clamp-4">
                             {game.description || "Built to be played by friends, enemies or even strangers needing a good time. Supports both single and multiplayer modes"}
                         </p>
                     </div>
@@ -106,7 +106,7 @@ export function GameCard({ game }: GameCardProps) {
                                 window.open(game.gameUrl, '_blank');
                             }}
                             disabled={!game.gameUrl}
-                            className="bg-[var(--color-piggy-deep-pink)] hover:bg-[var(--color-piggy-deep-pink)]/90 text-white rounded-full font-black px-6 h-9 text-xs shadow-[0_0_20px_rgba(255,47,122,0.3)] transition-all hover:scale-105 active:scale-95 flex items-center gap-2"
+                            className="bg-[var(--color-piggy-deep-pink)] hover:bg-[var(--color-piggy-deep-pink)]/90 text-white rounded-full font-black px-6 h-9 text-piggy-label shadow-[0_0_20px_rgba(255,47,122,0.3)] transition-all hover:scale-105 active:scale-95 flex items-center gap-2"
                         >
                             <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
                             Play

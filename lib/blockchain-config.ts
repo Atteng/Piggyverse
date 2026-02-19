@@ -27,6 +27,7 @@ export const BLOCKCHAIN_CONFIG = {
         USDC_TOKEN: process.env.NEXT_PUBLIC_CONTRACT_USDC!,
         TUSDC_TOKEN: process.env.NEXT_PUBLIC_CONTRACT_TUSDC!,
         WATCH_TO_EARN: process.env.NEXT_PUBLIC_CONTRACT_WATCH_TO_EARN!,
+        TREASURY_WALLET: process.env.NEXT_PUBLIC_TREASURY_WALLET!,
     },
 
     // Indexer Configuration
@@ -37,7 +38,15 @@ export const BLOCKCHAIN_CONFIG = {
     },
 
     // Supported tokens
-    SUPPORTED_TOKENS: (process.env.NEXT_PUBLIC_SUPPORTED_TOKENS || 'PIGGY,USDC,MATIC').split(',') as readonly string[],
+    SUPPORTED_TOKENS: (process.env.NEXT_PUBLIC_SUPPORTED_TOKENS || 'PIGGY,USDC,UP,TUSDC').split(',') as readonly string[],
+
+    // Token to Chain Mapping
+    TOKEN_NETWORKS: {
+        PIGGY: 'base',
+        USDC: 'base',
+        UP: 'mainnet',   // Ethereum Mainnet
+        TUSDC: 'base-sepolia' // Base Testnet
+    } as Record<string, 'base' | 'base-sepolia' | 'mainnet' | 'sepolia'>,
 };
 
 export type SupportedToken = typeof BLOCKCHAIN_CONFIG.SUPPORTED_TOKENS[number];

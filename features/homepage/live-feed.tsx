@@ -16,7 +16,7 @@ export function LiveFeed() {
         <div className="w-full bg-black/60 backdrop-blur-3xl border-y border-white/5 py-2 overflow-hidden flex items-center">
             <div className="flex items-center gap-2 px-4 border-r border-white/10 shrink-0">
                 <div className="w-2 h-2 rounded-full bg-[var(--color-piggy-super-green)] animate-pulse" />
-                <span className="text-xs font-bold tracking-wider text-[var(--color-piggy-super-green)] uppercase">Live Feed</span>
+                <span className="text-piggy-label font-bold tracking-tight text-[var(--color-piggy-super-green)] uppercase">Live Feed</span>
             </div>
 
             <div className="flex-1 overflow-hidden relative">
@@ -26,14 +26,14 @@ export function LiveFeed() {
                     transition={{ repeat: Infinity, duration: 30, ease: "linear" }}
                 >
                     {[...activities, ...activities, ...activities].map((activity, i) => (
-                        <div key={`${activity.id}-${i}`} className="flex items-center gap-2 text-sm text-gray-300">
+                        <div key={`${activity.id}-${i}`} className="flex items-center gap-2 text-piggy-body text-gray-300">
                             <Avatar className="h-5 w-5 border border-white/10">
                                 <AvatarImage src={activity.image} />
-                                <AvatarFallback className="text-[10px] bg-[var(--color-piggy-deep-pink)]">{activity.user[0]}</AvatarFallback>
+                                <AvatarFallback className="text-piggy-tiny bg-[var(--color-piggy-deep-pink)]">{activity.user[0]}</AvatarFallback>
                             </Avatar>
                             <span className="font-medium text-white">{activity.user}</span>
                             <span className="text-gray-400">{activity.action}</span>
-                            <span className="text-xs text-gray-500">• {activity.time}</span>
+                            <span className="text-piggy-label text-gray-500">• {activity.time}</span>
                         </div>
                     ))}
                 </motion.div>

@@ -34,7 +34,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
-import { TOURNAMENT_TEMPLATES, TOKENS } from "@/lib/data/mock";
+import { TOURNAMENT_TEMPLATES, TOKENS } from "@/lib/constants";
 import { useRouter } from "next/navigation";
 import { createTournament } from "@/lib/api/tournaments";
 import { useQuery } from "@tanstack/react-query";
@@ -253,6 +253,7 @@ export function TournamentForm({ initialData, isEditing = false }: TournamentFor
         }
     }, [selectedGame, form]);
 
+
     // Reset outcomes when switching to Binary or Score (they don't use custom outcomes)
     useEffect(() => {
         if (newMarket.marketType === "binary" || newMarket.marketType === "score") {
@@ -260,7 +261,16 @@ export function TournamentForm({ initialData, isEditing = false }: TournamentFor
         }
     }, [newMarket.marketType]);
 
+    // Auto-sync prizePoolToken with entryFeeToken
+    const watchEntryFeeToken = form.watch("entryFeeToken");
+    useEffect(() => {
+        if (watchEntryFeeToken) {
+            form.setValue("prizePoolToken", watchEntryFeeToken);
+        }
+    }, [watchEntryFeeToken, form]);
+
     const [isSubmitting, setIsSubmitting] = useState(false);
+
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
         if (isSubmitting) return;
@@ -415,7 +425,7 @@ export function TournamentForm({ initialData, isEditing = false }: TournamentFor
                     <div className="absolute left-0 top-1/2 w-full h-0.5 bg-white/10 -z-10" />
                     {[1, 2, 3, 4].map((s) => (
                         <div key={s} className={cn(
-                            "w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 border-4 border-black",
+                            "w-10 h-10 rounded-full flex items-center justify-center font-bold text-piggy-body transition-all duration-300 border-4 border-black",
                             step >= s
                                 ? "bg-[var(--color-piggy-deep-pink)] text-white scale-110 shadow-[0_0_15px_rgba(255,47,122,0.5)]"
                                 : "bg-[#2A2A2A] text-gray-500"
@@ -424,7 +434,7 @@ export function TournamentForm({ initialData, isEditing = false }: TournamentFor
                         </div>
                     ))}
                 </div>
-                <div className="flex justify-between mt-2 text-[10px] font-mono text-gray-500 px-4">
+                <div className="flex justify-between mt-2 text-piggy-tiny font-mono text-gray-500 px-4">
                     <span className={cn(step >= 1 && "text-[var(--color-piggy-deep-pink)] font-bold")}>Basic Info</span>
                     <span className={cn(step >= 2 && "text-[var(--color-piggy-deep-pink)] font-bold")}>Settings</span>
                     <span className={cn(step >= 3 && "text-[var(--color-piggy-deep-pink)] font-bold")}>Betting</span>
@@ -439,8 +449,8 @@ export function TournamentForm({ initialData, isEditing = false }: TournamentFor
                     {step === 1 && (
                         <div className="space-y-6 animate-in slide-in-from-right-8 duration-300">
                             <div className="space-y-2">
-                                <h2 className="text-2xl font-black text-white font-mono uppercase">Tournament Basics</h2>
-                                <p className="text-gray-400 text-sm">Select your game and format to get started.</p>
+                                <h2 className="text-piggy-title font-black text-white font-mono ">Tournament Basics</h2>
+                                <p className="text-gray-400 text-piggy-body">Select your game and format to get started.</p>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -519,7 +529,7 @@ export function TournamentForm({ initialData, isEditing = false }: TournamentFor
                                                             <div className="relative w-full h-full">
                                                                 <img src={imagePreview} alt="Preview" className="w-full h-full object-cover rounded-lg" />
                                                                 <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-lg">
-                                                                    <p className="text-white font-bold text-xs">Change</p>
+                                                                    <p className="text-white font-bold text-piggy-label">Change</p>
                                                                 </div>
                                                                 <Button
                                                                     type="button"
@@ -541,8 +551,8 @@ export function TournamentForm({ initialData, isEditing = false }: TournamentFor
                                                                     <ImageIcon className="w-4 h-4 text-gray-400 group-hover:text-white" />
                                                                 </div>
                                                                 <div className="text-center">
-                                                                    <p className="text-xs font-bold text-white">Upload</p>
-                                                                    <p className="text-[10px] text-gray-400">JPG/PNG</p>
+                                                                    <p className="text-piggy-label font-bold text-white">Upload</p>
+                                                                    <p className="text-piggy-tiny text-gray-400">JPG/PNG</p>
                                                                 </div>
                                                             </>
                                                         )}
@@ -584,8 +594,8 @@ export function TournamentForm({ initialData, isEditing = false }: TournamentFor
                                                             <h4 className="font-bold text-white">{template.name}</h4>
                                                             {field.value === template.id && <Check className="w-4 h-4 text-[var(--color-piggy-deep-pink)]" />}
                                                         </div>
-                                                        <p className="text-xs text-gray-400">{template.description}</p>
-                                                        <div className="mt-3 text-xs font-mono text-gray-500 bg-black/30 px-2 py-1 rounded inline-block">
+                                                        <p className="text-piggy-label text-gray-400">{template.description}</p>
+                                                        <div className="mt-3 text-piggy-label font-mono text-gray-500 bg-black/30 px-2 py-1 rounded inline-block">
                                                             {template.minPlayers}-{template.maxPlayers} Players
                                                         </div>
                                                     </div>
@@ -600,7 +610,7 @@ export function TournamentForm({ initialData, isEditing = false }: TournamentFor
                                     <Button
                                         type="button"
                                         onClick={nextStep}
-                                        className="bg-[var(--color-piggy-deep-pink)] hover:bg-[var(--color-piggy-deep-pink)]/90 text-white font-black uppercase tracking-widest text-xs h-12 w-full md:w-auto px-8 rounded-2xl shadow-[0_0_20px_rgba(255,47,122,0.3)] transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                        className="bg-[var(--color-piggy-deep-pink)] hover:bg-[var(--color-piggy-deep-pink)]/90 text-white font-black uppercase tracking-widest text-piggy-label h-12 w-full md:w-auto px-8 rounded-2xl shadow-[0_0_20px_rgba(255,47,122,0.3)] transition-all hover:scale-[1.02] active:scale-[0.98]"
                                     >
                                         <span className="md:hidden">Next</span>
                                         <span className="hidden md:inline">Next Step</span>
@@ -615,8 +625,8 @@ export function TournamentForm({ initialData, isEditing = false }: TournamentFor
                     {step === 2 && (
                         <div className="space-y-6 animate-in slide-in-from-right-8 duration-300">
                             <div className="space-y-2">
-                                <h2 className="text-2xl font-black text-white font-mono uppercase">Settings & Rules</h2>
-                                <p className="text-gray-400 text-sm">Configure schedule, privacy, and betting rules.</p>
+                                <h2 className="text-piggy-title font-black text-white font-mono ">Settings & Rules</h2>
+                                <p className="text-gray-400 text-piggy-body">Configure schedule, privacy, and betting rules.</p>
                             </div>
 
                             <div className="space-y-6">
@@ -695,7 +705,7 @@ export function TournamentForm({ initialData, isEditing = false }: TournamentFor
                                             <FormItem className="flex items-center justify-between space-y-0">
                                                 <div>
                                                     <FormLabel className="text-white font-bold">Custom Registration Deadline</FormLabel>
-                                                    <FormDescription className="text-xs text-gray-400">
+                                                    <FormDescription className="text-piggy-label text-gray-400">
                                                         Allow late entry or close registration before the start time.
                                                     </FormDescription>
                                                 </div>
@@ -1085,7 +1095,7 @@ export function TournamentForm({ initialData, isEditing = false }: TournamentFor
                                     type="button"
                                     variant="ghost"
                                     onClick={prevStep}
-                                    className="h-12 text-white/50 hover:text-white hover:bg-white/5 font-mono uppercase tracking-widest text-xs px-6 rounded-2xl transition-all"
+                                    className="h-12 text-white/50 hover:text-white hover:bg-white/5 font-mono uppercase tracking-widest text-piggy-label px-6 rounded-2xl transition-all"
                                 >
                                     <span className="hidden md:inline">Back</span>
                                     <ChevronRight className="md:hidden w-4 h-4 rotate-180" />
@@ -1093,7 +1103,7 @@ export function TournamentForm({ initialData, isEditing = false }: TournamentFor
                                 <Button
                                     type="button"
                                     onClick={nextStep}
-                                    className="flex-1 md:flex-none bg-[var(--color-piggy-deep-pink)] hover:bg-[var(--color-piggy-deep-pink)]/90 text-white font-black uppercase tracking-widest text-xs h-12 px-8 rounded-2xl shadow-[0_0_20px_rgba(255,47,122,0.3)] transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                    className="flex-1 md:flex-none bg-[var(--color-piggy-deep-pink)] hover:bg-[var(--color-piggy-deep-pink)]/90 text-white font-black uppercase tracking-widest text-piggy-label h-12 px-8 rounded-2xl shadow-[0_0_20px_rgba(255,47,122,0.3)] transition-all hover:scale-[1.02] active:scale-[0.98]"
                                 >
                                     <span className="md:hidden">Next</span>
                                     <span className="hidden md:inline">Next Step</span>
@@ -1101,291 +1111,296 @@ export function TournamentForm({ initialData, isEditing = false }: TournamentFor
                                 </Button>
                             </div>
                         </div>
-                    )}
+                    )
+                    }
 
                     {/* STEP 3: BETTING MARKETS */}
-                    {step === 3 && (
-                        <div className="space-y-6 animate-in slide-in-from-right-8 duration-300">
-                            <div className="space-y-2">
-                                <h2 className="text-2xl font-black text-white font-mono uppercase">Betting Markets</h2>
-                                <p className="text-gray-400 text-sm">Create markets for users to bet on.</p>
-                            </div>
-
-                            {/* Existing Markets List */}
-                            <div className="space-y-3">
-                                {watchBettingMarkets?.map((market: any, index: number) => (
-                                    <div key={market.id} className="p-4 bg-white/5 border border-white/10 rounded-xl flex items-center justify-between">
-                                        <div>
-                                            <div className="flex items-center gap-2">
-                                                <Badge className="bg-[var(--color-piggy-deep-pink)] text-white">{market.marketType}</Badge>
-                                                <h4 className="font-bold text-white">{market.marketQuestion}</h4>
-                                            </div>
-                                            <p className="text-xs text-gray-400 mt-1">
-                                                Pre-Seed: {market.poolPreSeed || 0} {market.poolPreSeedToken} | Outcomes: {market.outcomes?.length || 0}
-                                            </p>
-                                        </div>
-                                        <Button type="button" variant="ghost" size="icon" onClick={() => removeMarket(market.id)} className="text-gray-400 hover:text-red-500">
-                                            <Trash2 className="w-4 h-4" />
-                                        </Button>
-                                    </div>
-                                ))}
-                                {watchBettingMarkets?.length === 0 && (
-                                    <div className="text-center py-8 border-2 border-dashed border-white/10 rounded-xl bg-black/20 text-gray-400">
-                                        No betting markets added yet.
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Add New Market Form */}
-                            <div className="p-6 border border-white/10 bg-black/20 rounded-xl space-y-4">
-                                <h5 className="font-bold text-white flex items-center gap-2">
-                                    <Plus className="w-4 h-4" /> Add New Market
-                                </h5>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <FormLabel className="text-white">Market Type</FormLabel>
-                                        <Select
-                                            value={newMarket.marketType}
-                                            onValueChange={(val) => setNewMarket({ ...newMarket, marketType: val as any })}
-                                        >
-                                            <SelectTrigger className="bg-black/40 border-white/10 text-white">
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="parimutuel">Parimutuel</SelectItem>
-                                                <SelectItem value="weighted">Weighted</SelectItem>
-                                                <SelectItem value="binary">Binary (Yes/No)</SelectItem>
-                                                <SelectItem value="score">Score Prediction</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <FormLabel className="text-white">Question</FormLabel>
-                                        <Input
-                                            placeholder="e.g., Match Winner?"
-                                            value={newMarket.marketQuestion || ""}
-                                            onChange={(e) => setNewMarket({ ...newMarket, marketQuestion: e.target.value })}
-                                            className="bg-black/40 border-white/10 text-white"
-                                        />
-                                    </div>
+                    {
+                        step === 3 && (
+                            <div className="space-y-6 animate-in slide-in-from-right-8 duration-300">
+                                <div className="space-y-2">
+                                    <h2 className="text-piggy-title font-black text-white font-mono ">Betting Markets</h2>
+                                    <p className="text-gray-400 text-piggy-body">Create markets for users to bet on.</p>
                                 </div>
 
-                                {/* Outcomes Logic */}
-                                {(newMarket.marketType === "parimutuel" || newMarket.marketType === "weighted") && (
-                                    <div className="space-y-2">
-                                        <FormLabel className="text-white">Outcomes</FormLabel>
-                                        <div className="flex gap-2">
+                                {/* Existing Markets List */}
+                                <div className="space-y-3">
+                                    {watchBettingMarkets?.map((market: any, index: number) => (
+                                        <div key={market.id} className="p-4 bg-white/5 border border-white/10 rounded-xl flex items-center justify-between">
+                                            <div>
+                                                <div className="flex items-center gap-2">
+                                                    <Badge className="bg-[var(--color-piggy-deep-pink)] text-white">{market.marketType}</Badge>
+                                                    <h4 className="font-bold text-white">{market.marketQuestion}</h4>
+                                                </div>
+                                                <p className="text-xs text-gray-400 mt-1">
+                                                    Pre-Seed: {market.poolPreSeed || 0} {market.poolPreSeedToken} | Outcomes: {market.outcomes?.length || 0}
+                                                </p>
+                                            </div>
+                                            <Button type="button" variant="ghost" size="icon" onClick={() => removeMarket(market.id)} className="text-gray-400 hover:text-red-500">
+                                                <Trash2 className="w-4 h-4" />
+                                            </Button>
+                                        </div>
+                                    ))}
+                                    {watchBettingMarkets?.length === 0 && (
+                                        <div className="text-center py-8 border-2 border-dashed border-white/10 rounded-xl bg-black/20 text-gray-400">
+                                            No betting markets added yet.
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Add New Market Form */}
+                                <div className="p-6 border border-white/10 bg-black/20 rounded-xl space-y-4">
+                                    <h5 className="font-bold text-white flex items-center gap-2 text-piggy-body">
+                                        <Plus className="w-4 h-4" /> Add New Market
+                                    </h5>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <FormLabel className="text-white">Market Type</FormLabel>
+                                            <Select
+                                                value={newMarket.marketType}
+                                                onValueChange={(val) => setNewMarket({ ...newMarket, marketType: val as any })}
+                                            >
+                                                <SelectTrigger className="bg-black/40 border-white/10 text-white">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="parimutuel">Parimutuel</SelectItem>
+                                                    <SelectItem value="weighted">Weighted</SelectItem>
+                                                    <SelectItem value="binary">Binary (Yes/No)</SelectItem>
+                                                    <SelectItem value="score">Score Prediction</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <FormLabel className="text-white">Question</FormLabel>
                                             <Input
-                                                id="new-outcome"
-                                                placeholder="Outcome Label (e.g. Team A)"
-                                                onKeyDown={(e) => {
-                                                    if (e.key === 'Enter') {
-                                                        e.preventDefault();
-                                                        const val = e.currentTarget.value;
-                                                        if (val) {
-                                                            setNewOutcomes([...newOutcomes, { id: crypto.randomUUID(), label: val }]);
-                                                            e.currentTarget.value = "";
-                                                        }
-                                                    }
-                                                }}
+                                                placeholder="e.g., Match Winner?"
+                                                value={newMarket.marketQuestion || ""}
+                                                onChange={(e) => setNewMarket({ ...newMarket, marketQuestion: e.target.value })}
                                                 className="bg-black/40 border-white/10 text-white"
                                             />
-                                            <Button type="button" onClick={() => {
-                                                const el = document.getElementById("new-outcome") as HTMLInputElement;
-                                                if (el && el.value) {
-                                                    setNewOutcomes([...newOutcomes, { id: crypto.randomUUID(), label: el.value }]);
-                                                    el.value = "";
-                                                }
-                                            }}>Add</Button>
-                                        </div>
-                                        {newMarket.marketType === "weighted" && (
-                                            <p className="text-xs text-gray-400">
-                                                For Weighted markets, initial odds will be calculated based on the number of outcomes.
-                                                You can adjust them later in the market management view.
-                                            </p>
-                                        )}
-                                        <div className="flex flex-wrap gap-2 mt-2">
-                                            {newOutcomes.map(o => (
-                                                <Badge key={o.id} variant="secondary" className="gap-2">
-                                                    {o.label}
-                                                    <X className="w-3 h-3 cursor-pointer" onClick={() => setNewOutcomes(newOutcomes.filter(x => x.id !== o.id))} />
-                                                </Badge>
-                                            ))}
                                         </div>
                                     </div>
-                                )}
 
-                                {newMarket.marketType === "binary" && (
-                                    <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl">
-                                        <p className="text-sm text-blue-300 flex items-center gap-2">
-                                            <AlertCircle className="w-4 h-4" />
-                                            Binary markets automatically have <strong>YES</strong> and <strong>NO</strong> outcomes.
-                                        </p>
-                                    </div>
-                                )}
-
-                                {newMarket.marketType === "score" && (
-                                    <div className="space-y-4">
-                                        <div className="p-4 bg-purple-500/10 border border-purple-500/20 rounded-xl">
-                                            <p className="text-sm text-purple-300 flex items-center gap-2">
-                                                <AlertCircle className="w-4 h-4" />
-                                                Score markets allow users to predict exact scores or stats.
-                                            </p>
-                                        </div>
+                                    {/* Outcomes Logic */}
+                                    {(newMarket.marketType === "parimutuel" || newMarket.marketType === "weighted") && (
                                         <div className="space-y-2">
-                                            <FormLabel className="text-white">Scoring Rules / Details</FormLabel>
-                                            <Textarea
-                                                placeholder="e.g. Predict the exact number of kills for Player A."
-                                                className="bg-black/40 border-white/10 text-white min-h-[80px]"
-                                                onChange={(e) => setNewMarket(prev => ({
-                                                    ...prev,
-                                                    scoreConfig: { ...prev.scoreConfig, scoringRules: e.target.value, selectionLimit: 1 }
-                                                }))}
-                                            />
-                                        </div>
-                                    </div>
-                                )}
-
-                                <div className="pt-2">
-                                    <Button type="button" onClick={handleAddMarket} className="w-full bg-[var(--color-piggy-deep-pink)] hover:bg-[var(--color-piggy-deep-pink)]/90 text-white font-black uppercase tracking-widest text-xs h-12 rounded-2xl shadow-[0_0_20px_rgba(255,47,122,0.3)] transition-all hover:scale-[1.02] active:scale-[0.98]">
-                                        Save Market to List
-                                    </Button>
-                                    {selectedGame?.hasOracleIntegration && (
-                                        <div className="flex items-center gap-2 mt-2 text-xs text-[var(--color-piggy-super-green)] justify-center">
-                                            <Check className="w-3 h-3" /> Auto-Resolution Supported by Oracle
+                                            <FormLabel className="text-white">Outcomes</FormLabel>
+                                            <div className="flex gap-2">
+                                                <Input
+                                                    id="new-outcome"
+                                                    placeholder="Outcome Label (e.g. Team A)"
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') {
+                                                            e.preventDefault();
+                                                            const val = e.currentTarget.value;
+                                                            if (val) {
+                                                                setNewOutcomes([...newOutcomes, { id: crypto.randomUUID(), label: val }]);
+                                                                e.currentTarget.value = "";
+                                                            }
+                                                        }
+                                                    }}
+                                                    className="bg-black/40 border-white/10 text-white"
+                                                />
+                                                <Button type="button" onClick={() => {
+                                                    const el = document.getElementById("new-outcome") as HTMLInputElement;
+                                                    if (el && el.value) {
+                                                        setNewOutcomes([...newOutcomes, { id: crypto.randomUUID(), label: el.value }]);
+                                                        el.value = "";
+                                                    }
+                                                }}>Add</Button>
+                                            </div>
+                                            {newMarket.marketType === "weighted" && (
+                                                <p className="text-xs text-gray-400">
+                                                    For Weighted markets, initial odds will be calculated based on the number of outcomes.
+                                                    You can adjust them later in the market management view.
+                                                </p>
+                                            )}
+                                            <div className="flex flex-wrap gap-2 mt-2">
+                                                {newOutcomes.map(o => (
+                                                    <Badge key={o.id} variant="secondary" className="gap-2">
+                                                        {o.label}
+                                                        <X className="w-3 h-3 cursor-pointer" onClick={() => setNewOutcomes(newOutcomes.filter(x => x.id !== o.id))} />
+                                                    </Badge>
+                                                ))}
+                                            </div>
                                         </div>
                                     )}
-                                </div>
-                            </div>
 
-                            <div className="pt-6 flex gap-3 justify-between border-t border-white/5 mt-8">
-                                <Button
-                                    type="button"
-                                    variant="ghost"
-                                    onClick={prevStep}
-                                    className="h-12 text-white/50 hover:text-white hover:bg-white/5 font-mono uppercase tracking-widest text-xs px-6 rounded-2xl transition-all"
-                                >
-                                    <span className="hidden md:inline">Back</span>
-                                    <ChevronRight className="md:hidden w-4 h-4 rotate-180" />
-                                </Button>
-                                <Button
-                                    type="button"
-                                    onClick={nextStep}
-                                    className="flex-1 md:flex-none bg-[var(--color-piggy-deep-pink)] hover:bg-[var(--color-piggy-deep-pink)]/90 text-white font-black uppercase tracking-widest text-xs h-12 px-8 rounded-2xl shadow-[0_0_20px_rgba(255,47,122,0.3)] transition-all hover:scale-[1.02] active:scale-[0.98]"
-                                >
-                                    <span className="md:hidden">Next</span>
-                                    <span className="hidden md:inline">Next Step</span>
-                                    <ChevronRight className="w-4 h-4 ml-2" />
-                                </Button>
-                            </div>
-                        </div>
-                    )}
+                                    {newMarket.marketType === "binary" && (
+                                        <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl">
+                                            <p className="text-sm text-blue-300 flex items-center gap-2">
+                                                <AlertCircle className="w-4 h-4" />
+                                                Binary markets automatically have <strong>YES</strong> and <strong>NO</strong> outcomes.
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    {newMarket.marketType === "score" && (
+                                        <div className="space-y-4">
+                                            <div className="p-4 bg-purple-500/10 border border-purple-500/20 rounded-xl">
+                                                <p className="text-sm text-purple-300 flex items-center gap-2">
+                                                    <AlertCircle className="w-4 h-4" />
+                                                    Score markets allow users to predict exact scores or stats.
+                                                </p>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <FormLabel className="text-white">Scoring Rules / Details</FormLabel>
+                                                <Textarea
+                                                    placeholder="e.g. Predict the exact number of kills for Player A."
+                                                    className="bg-black/40 border-white/10 text-white min-h-[80px]"
+                                                    onChange={(e) => setNewMarket(prev => ({
+                                                        ...prev,
+                                                        scoreConfig: { ...prev.scoreConfig, scoringRules: e.target.value, selectionLimit: 1 }
+                                                    }))}
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="pt-2">
+                                        <Button type="button" onClick={handleAddMarket} className="w-full bg-[var(--color-piggy-deep-pink)] hover:bg-[var(--color-piggy-deep-pink)]/90 text-white font-black uppercase tracking-widest text-xs h-12 rounded-2xl shadow-[0_0_20px_rgba(255,47,122,0.3)] transition-all hover:scale-[1.02] active:scale-[0.98]">
+                                            Save Market to List
+                                        </Button>
+                                        {selectedGame?.hasOracleIntegration && (
+                                            <div className="flex items-center gap-2 mt-2 text-xs text-[var(--color-piggy-super-green)] justify-center">
+                                                <Check className="w-3 h-3" /> Auto-Resolution Supported by Oracle
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="pt-6 flex gap-3 justify-between border-t border-white/5 mt-8">
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        onClick={prevStep}
+                                        className="h-12 text-white/50 hover:text-white hover:bg-white/5 font-mono uppercase tracking-widest text-piggy-label px-6 rounded-2xl transition-all"
+                                    >
+                                        <span className="hidden md:inline">Back</span>
+                                        <ChevronRight className="md:hidden w-4 h-4 rotate-180" />
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        onClick={nextStep}
+                                        className="flex-1 md:flex-none bg-[var(--color-piggy-deep-pink)] hover:bg-[var(--color-piggy-deep-pink)]/90 text-white font-black uppercase tracking-widest text-piggy-label h-12 px-8 rounded-2xl shadow-[0_0_20px_rgba(255,47,122,0.3)] transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                    >
+                                        <span className="md:hidden">Next</span>
+                                        <span className="hidden md:inline">Next Step</span>
+                                        <ChevronRight className="w-4 h-4 ml-2" />
+                                    </Button>
+                                </div >
+                            </div >
+                        )
+                    }
 
                     {/* STEP 4: REVIEW */}
-                    {step === 4 && (
-                        <div className="space-y-6 animate-in slide-in-from-right-8 duration-300">
-                            <div className="space-y-2">
-                                <h2 className="text-2xl font-black text-white font-mono uppercase">Review & Create</h2>
-                                <p className="text-gray-400 text-sm">Double check your tournament details before launching.</p>
-                            </div>
+                    {
+                        step === 4 && (
+                            <div className="space-y-6 animate-in slide-in-from-right-8 duration-300">
+                                <div className="space-y-2">
+                                    <h2 className="text-piggy-title font-black text-white font-mono ">Review & Create</h2>
+                                    <p className="text-gray-400 text-piggy-body">Double check your tournament details before launching.</p>
+                                </div>
 
-                            <div className="bg-white/5 rounded-2xl p-6 space-y-4">
-                                <div className="grid grid-cols-2 gap-4 text-sm">
-                                    <div className="text-gray-400">Tournament Name</div>
-                                    <div className="font-bold text-white text-right">{form.getValues("name")}</div>
+                                <div className="bg-white/5 rounded-2xl p-6 space-y-4">
+                                    <div className="grid grid-cols-2 gap-4 text-piggy-body">
+                                        <div className="text-gray-400">Tournament Name</div>
+                                        <div className="font-bold text-white text-right">{form.getValues("name")}</div>
 
-                                    <div className="text-gray-400">Description</div>
-                                    <div className="font-bold text-white text-right truncate max-w-[200px] ml-auto">{form.getValues("description")}</div>
+                                        <div className="text-gray-400">Description</div>
+                                        <div className="font-bold text-white text-right truncate max-w-[200px] ml-auto">{form.getValues("description")}</div>
 
-                                    <div className="text-gray-400">Game</div>
-                                    <div className="font-bold text-white text-right">
-                                        {games?.find(g => g.id === form.getValues("gameId"))?.title}
-                                        <span className="text-gray-500 font-normal ml-1">({form.getValues("gameMode")})</span>
+                                        <div className="text-gray-400">Game</div>
+                                        <div className="font-bold text-white text-right">
+                                            {games?.find(g => g.id === form.getValues("gameId"))?.title}
+                                            <span className="text-gray-500 font-normal ml-1">({form.getValues("gameMode")})</span>
+                                        </div>
+
+                                        <div className="text-gray-400">Region / Platform</div>
+                                        <div className="font-bold text-white text-right">
+                                            {form.getValues("region")} / {form.getValues("platform")}
+                                        </div>
+
+                                        <div className="text-gray-400">Format</div>
+                                        <div className="font-bold text-white text-right">
+                                            {TOURNAMENT_TEMPLATES.find(t => t.id === form.getValues("templateId"))?.name}
+                                        </div>
+
+                                        <div className="text-gray-400">Players</div>
+                                        <div className="font-bold text-white text-right">{form.getValues("playerCount")}</div>
+
+                                        <div className="text-gray-400">Schedule</div>
+                                        <div className="font-bold text-white text-right">
+                                            {form.getValues("startDate") && format(form.getValues("startDate"), "PPP")} at {form.getValues("startTime")}
+                                        </div>
+
+                                        <div className="text-gray-400">Discord</div>
+                                        <div className="font-bold text-blue-400 text-right truncate max-w-[200px] ml-auto">{form.getValues("discordLink") || "None"}</div>
+
+                                        <div className="text-gray-400">Lobby URL</div>
+                                        <div className="font-bold text-blue-400 text-right truncate max-w-[200px] ml-auto">{form.getValues("lobbyUrl") || "None"}</div>
+
+                                        <div className="border-t border-white/10 col-span-2 my-2" />
+
+                                        <div className="text-gray-400">Type</div>
+                                        <div className="font-bold text-right">
+                                            {form.getValues("isIncentivized") === "incentivized"
+                                                ? <span className="text-[var(--color-piggy-deep-pink)]">
+                                                    Incentivized
+                                                    {form.getValues("allowBetting") ? " (Betting Enabled)" : ""}
+                                                </span>
+                                                : <span className="text-green-400">Education / Fun</span>
+                                            }
+                                        </div>
+
+                                        {form.getValues("isIncentivized") === "incentivized" && (
+                                            <>
+                                                <div className="text-gray-400">Entry Fee</div>
+                                                <div className="font-bold text-white text-right">
+                                                    {form.getValues("entryFeeAmount")} {form.getValues("entryFeeToken")}
+                                                </div>
+
+                                                <div className="text-gray-400">Prize Pool</div>
+                                                <div className="font-bold text-white text-right">
+                                                    {form.getValues("prizePoolAmount")} {form.getValues("prizePoolToken")}
+                                                </div>
+
+                                                <div className="text-gray-400">Prize Distribution</div>
+                                                <div className="font-bold text-white text-right truncate max-w-[200px] ml-auto">
+                                                    {form.getValues("prizeDistribution") || "Not specified"}
+                                                </div>
+                                            </>
+                                        )}
                                     </div>
+                                </div>
 
-                                    <div className="text-gray-400">Region / Platform</div>
-                                    <div className="font-bold text-white text-right">
-                                        {form.getValues("region")} / {form.getValues("platform")}
-                                    </div>
-
-                                    <div className="text-gray-400">Format</div>
-                                    <div className="font-bold text-white text-right">
-                                        {TOURNAMENT_TEMPLATES.find(t => t.id === form.getValues("templateId"))?.name}
-                                    </div>
-
-                                    <div className="text-gray-400">Players</div>
-                                    <div className="font-bold text-white text-right">{form.getValues("playerCount")}</div>
-
-                                    <div className="text-gray-400">Schedule</div>
-                                    <div className="font-bold text-white text-right">
-                                        {form.getValues("startDate") && format(form.getValues("startDate"), "PPP")} at {form.getValues("startTime")}
-                                    </div>
-
-                                    <div className="text-gray-400">Discord</div>
-                                    <div className="font-bold text-blue-400 text-right truncate max-w-[200px] ml-auto">{form.getValues("discordLink") || "None"}</div>
-
-                                    <div className="text-gray-400">Lobby URL</div>
-                                    <div className="font-bold text-blue-400 text-right truncate max-w-[200px] ml-auto">{form.getValues("lobbyUrl") || "None"}</div>
-
-                                    <div className="border-t border-white/10 col-span-2 my-2" />
-
-                                    <div className="text-gray-400">Type</div>
-                                    <div className="font-bold text-right">
-                                        {form.getValues("isIncentivized") === "incentivized"
-                                            ? <span className="text-[var(--color-piggy-deep-pink)]">
-                                                Incentivized
-                                                {form.getValues("allowBetting") ? " (Betting Enabled)" : ""}
-                                            </span>
-                                            : <span className="text-green-400">Education / Fun</span>
-                                        }
-                                    </div>
-
-                                    {form.getValues("isIncentivized") === "incentivized" && (
-                                        <>
-                                            <div className="text-gray-400">Entry Fee</div>
-                                            <div className="font-bold text-white text-right">
-                                                {form.getValues("entryFeeAmount")} {form.getValues("entryFeeToken")}
-                                            </div>
-
-                                            <div className="text-gray-400">Prize Pool</div>
-                                            <div className="font-bold text-white text-right">
-                                                {form.getValues("prizePoolAmount")} {form.getValues("prizePoolToken")}
-                                            </div>
-
-                                            <div className="text-gray-400">Prize Distribution</div>
-                                            <div className="font-bold text-white text-right truncate max-w-[200px] ml-auto">
-                                                {form.getValues("prizeDistribution") || "Not specified"}
-                                            </div>
-                                        </>
-                                    )}
+                                <div className="pt-6 flex gap-3 justify-between border-t border-white/5 mt-8">
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        onClick={prevStep}
+                                        className="h-12 text-white/50 hover:text-white hover:bg-white/5 font-mono uppercase tracking-widest text-xs px-6 rounded-2xl transition-all"
+                                    >
+                                        <span className="hidden md:inline">Back</span>
+                                        <ChevronRight className="md:hidden w-4 h-4 rotate-180" />
+                                    </Button>
+                                    <Button
+                                        type="submit"
+                                        disabled={isSubmitting}
+                                        className="flex-1 md:flex-none bg-[var(--color-piggy-deep-pink)] hover:bg-[var(--color-piggy-deep-pink)]/90 text-white font-black uppercase tracking-widest text-xs h-12 px-8 rounded-2xl shadow-[0_0_20px_rgba(255,47,122,0.3)] transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <span className="md:hidden">Create</span>}
+                                        <span className="hidden md:inline">{isSubmitting ? "" : "Create Tournament"}</span>
+                                    </Button>
                                 </div>
                             </div>
-
-                            <div className="pt-6 flex gap-3 justify-between border-t border-white/5 mt-8">
-                                <Button
-                                    type="button"
-                                    variant="ghost"
-                                    onClick={prevStep}
-                                    className="h-12 text-white/50 hover:text-white hover:bg-white/5 font-mono uppercase tracking-widest text-xs px-6 rounded-2xl transition-all"
-                                >
-                                    <span className="hidden md:inline">Back</span>
-                                    <ChevronRight className="md:hidden w-4 h-4 rotate-180" />
-                                </Button>
-                                <Button
-                                    type="submit"
-                                    disabled={isSubmitting}
-                                    className="flex-1 md:flex-none bg-[var(--color-piggy-deep-pink)] hover:bg-[var(--color-piggy-deep-pink)]/90 text-white font-black uppercase tracking-widest text-xs h-12 px-8 rounded-2xl shadow-[0_0_20px_rgba(255,47,122,0.3)] transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <span className="md:hidden">Create</span>}
-                                    <span className="hidden md:inline">{isSubmitting ? "" : "Create Tournament"}</span>
-                                </Button>
-                            </div>
-                        </div>
-                    )}
-                </form>
-            </Form>
-        </div>
+                        )
+                    }
+                </form >
+            </Form >
+        </div >
     );
 }
