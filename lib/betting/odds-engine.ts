@@ -40,13 +40,14 @@ export async function calculateLiveOdds(marketId: string): Promise<OutcomeOdds[]
     return market.outcomes.map(outcome => {
         let odds: number;
 
-        if (outcome.totalBets <= 0) {
-            // No bets on this outcome — use seed-based minimum
-            odds = market.outcomes.length > 0
-                ? Math.min(MAX_ODDS, market.outcomes.length * 2) // Rough initial odds
-                : MIN_ODDS;
+        // Distribute poolPreSeed evenly across outcomes as virtual liquidity
+        const virtualOutcomePool = outcome.totalBets + (market.poolPreSeed / (market.outcomes.length || 1));
+
+        if (virtualOutcomePool <= 0) {
+            // No bets and no seed — use max odds
+            odds = MAX_ODDS;
         } else {
-            odds = netPool / outcome.totalBets;
+            odds = netPool / virtualOutcomePool;
         }
 
         // Clamp odds to safe range
@@ -63,17 +64,26 @@ export async function calculateLiveOdds(marketId: string): Promise<OutcomeOdds[]
 }
 
 /**
- * Persist calculated odds to BettingOutcome.weight in the database.
+ * Persist calculated odds to BettingOutcome.weight and currentOdds in the database.
  * Uses a transaction to ensure atomic updates.
  */
 export async function updateMarketWeights(marketId: string): Promise<OutcomeOdds[]> {
     const odds = await calculateLiveOdds(marketId);
 
+    const market = await prisma.bettingMarket.findUnique({
+        where: { id: marketId },
+        select: { marketType: true }
+    });
+
     await prisma.$transaction(
         odds.map(o =>
             prisma.bettingOutcome.update({
                 where: { id: o.outcomeId },
-                data: { weight: o.odds }
+                data: {
+                    currentOdds: o.odds,
+                    // If it's a weighted market, also update the weight field
+                    ...(market?.marketType === 'WEIGHTED' ? { weight: o.odds } : {})
+                } as any
             })
         )
     );

@@ -264,6 +264,9 @@ model TournamentRegistration {
   paymentExpiresAt DateTime?
 
   registeredAt DateTime   @default(now())
+  
+  // Elimination Tracking
+  finalRank    Int?
 
   @@unique([tournamentId, userId])
   @@map("tournament_registrations")
@@ -358,6 +361,7 @@ model BettingOutcome {
   weight    Float? // for weighted markets
   totalBets Float  @default(0)
   betCount  Int    @default(0)
+  currentOdds Float? @default(1.0) // Persisted odds for performance
 
   // Relations
   bets Bet[]

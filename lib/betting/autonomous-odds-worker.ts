@@ -8,6 +8,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { pokerVerifier } from '@/lib/poker-verifier';
+import { settleTournamentBets } from '@/lib/tournaments';
 import { updateMarketWeights } from './odds-engine';
 import { dreCompiler } from './dre-compiler';
 import { ResolutionStatus, MarketStatus } from '@prisma/client';
@@ -80,24 +81,48 @@ export class AutonomousOddsWorker {
 
         if (tournaments.length === 0) return;
 
-        console.log(`Processing ${tournaments.length} active autonomous tournaments...`);
-
         for (const tournament of tournaments) {
-            await this.syncTournamentLogs(
-                tournament.id,
-                (tournament as any).tableId,
-                (tournament as any).bettingMarkets
-            );
+            await this.syncTournamentLogs(tournament as any);
         }
     }
 
     /**
      * Sync logs for a specific tournament and update odds
      */
-    private async syncTournamentLogs(tournamentId: string, tableId: string, markets: any[]) {
+    private async syncTournamentLogs(tournament: any) {
+        const { id: tournamentId, bettingMarkets: markets } = tournament;
+        const tableId = tournament.metadata?.tableId || tournament.tableId;
+
+        if (!tableId) {
+            // Silently skip if no tableId (might be early setup)
+            return;
+        }
+
         try {
             // 1. Find the latest hand on PokerNow
-            const latestHand = await pokerVerifier.findLastHand(tableId);
+            // Wrap in safe check to prevent crashes if tournament hasn't actually started on PokerNow
+            let latestHand = 0;
+            try {
+                latestHand = await pokerVerifier.findLastHand(tableId);
+            } catch (e) {
+                // Table doesn't exist yet or PokerNow API returned error
+                return;
+            }
+
+            if (latestHand <= 0) {
+                // Check for "Zombie" tournament (0 hands for > 4 hours after start)
+                const startTime = new Date(tournament.startDate);
+                const hoursSinceStart = (Date.now() - startTime.getTime()) / (1000 * 60 * 60);
+
+                if (hoursSinceStart > 4) {
+                    console.log(`[Zombie-Check] Tournament ${tournamentId} has 0 hands after 4 hours. Auto-completing.`);
+                    await prisma.tournament.update({
+                        where: { id: tournamentId },
+                        data: { status: 'COMPLETED' }
+                    });
+                }
+                return;
+            }
 
             // 2. Determine the lowest lastSyncedHand among all markets
             const minSyncedHand = Math.min(...markets.map((m: any) => m.lastSyncedHand || 0));
@@ -129,8 +154,6 @@ export class AutonomousOddsWorker {
             // AUTO-PAUSE (Anti-Sniping)
             if (result.isPaused) {
                 console.log(`[DRE] High Volatility Detected (All-In). Pausing markets for Tournament ${tournamentId}`);
-
-                // Pause all open markets for this tournament
                 await prisma.bettingMarket.updateMany({
                     where: {
                         id: { in: markets.map((m: any) => m.id) },
@@ -141,40 +164,21 @@ export class AutonomousOddsWorker {
                         suspensionReason: result.reasoning || "High Volatility Event"
                     }
                 });
-
-                // Skip further processing this tick
                 return;
             }
 
             if (result.status === 'COMPLETED' && result.winner) {
                 console.log(`[DRE] Game Completed for Tournament ${tournamentId}. Winner: ${result.winner}`);
 
-                // For each market, find the matching outcome
-                for (const market of markets) {
-                    // Simple string matching for now. 
-                    const winningOutcome = market.outcomes.find((o: any) =>
-                        o.label.toLowerCase() === result.winner!.toLowerCase()
-                    );
-
-                    if (winningOutcome) {
-                        console.log(`[DRE] Proposing winner for market ${market.id}: ${winningOutcome.label} (${winningOutcome.id})`);
-
-                        await prisma.bettingMarket.update({
-                            where: { id: market.id },
-                            data: {
-                                status: MarketStatus.CLOSED, // Stop betting
-                                resolutionStatus: ResolutionStatus.PROPOSED,
-                                aiProposedWinnerId: winningOutcome.id,
-                                resolverDSL: result.resolverDSL ?? result.reasoning ?? null,
-                            }
-                        });
-                    } else {
-                        console.warn(`[DRE] Winner "${result.winner}" not found in market ${market.id} outcomes.`);
-                    }
+                // Fetch final game standings to persist rankings
+                console.log(`[DRE] Triggering 100% automated settlement for ${tournamentId}...`);
+                try {
+                    await settleTournamentBets(tournamentId);
+                    console.log(`[DRE] Tournament ${tournamentId} successfully auto-settled, rankings saved, and bets paid out.`);
+                } catch (e) {
+                    console.error(`[DRE] Automated settlement failed for ${tournamentId}`, e);
                 }
             }
-
-            console.log(`Updated odds for ${markets.length} markets in Tournament ${tournamentId}`);
 
         } catch (error) {
             console.error(`Failed to sync tournament ${tournamentId}:`, error);

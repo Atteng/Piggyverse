@@ -143,7 +143,7 @@ export async function updateGameLeaderboard(userId: string, gameId: string, stat
             matchWins: stats.matchWins || 0,
             tournamentsWon: stats.tournamentsWon || 0,
             timePlayedHours: stats.timePlayedHours || 0,
-            rank: 999999, // default rank, will be updated by a scheduled job or trigger
+            rank: 999999, // default rank, will be updated by updateGameRanks
             totalScore: 0
         },
         update: {
@@ -153,17 +153,38 @@ export async function updateGameLeaderboard(userId: string, gameId: string, stat
         }
     });
 
-    // Calculate score for this game (Basic implementation)
-    // Score = (Wins * 10) + (Tourneys * 50) + (Hours * 5)
-    const newScore = (entry.matchWins * 10) + (entry.tournamentsWon * 50) + (entry.timePlayedHours * 5);
+    // Calculate score for this game (Balanced implementation)
+    // Wins (100) + Tourneys (1000) + Hours (50)
+    const newScore = (entry.matchWins * 100) + (entry.tournamentsWon * 1000) + (entry.timePlayedHours * 50);
 
     await prisma.leaderboardEntry.update({
         where: { id: entry.id },
         data: { totalScore: newScore }
     });
 
-    // Note: Re-ranking all players for this game is expensive and should be done via background job
-    // For now, we update the score which allows for sorting
+    // Trigger persistent rank update for this specific game
+    // This is non-blocking to keep response fast
+    updateGameRanks(gameId).catch(err =>
+        console.error(`[Leaderboard] Failed to update ranks for game ${gameId}:`, err)
+    );
+}
+
+/**
+ * Persistently update all ranks for a specific game
+ */
+export async function updateGameRanks(gameId: string): Promise<void> {
+    const entries = await prisma.leaderboardEntry.findMany({
+        where: { gameId },
+        orderBy: { totalScore: 'desc' }
+    });
+
+    // Update each entry with its new rank
+    for (let i = 0; i < entries.length; i++) {
+        await prisma.leaderboardEntry.update({
+            where: { id: entries[i].id },
+            data: { rank: i + 1 }
+        });
+    }
 }
 
 /**
@@ -273,5 +294,94 @@ export async function incrementHoursPlayed(userId: string, hours: number, gameId
 
     if (gameId) {
         await updateGameLeaderboard(userId, gameId, { timePlayedHours: Math.round(hours) }); // DB uses Int
+    }
+}
+
+/**
+ * Process final tournament results and update stats for all participants
+ * This is the central point for award/rank logic after a tournament settles.
+ */
+export async function processTournamentResults(
+    tournamentId: string,
+    result: {
+        winner: string;
+        finalStandings: any[];
+        playerStats?: Map<string, { handsPlayed: number, handsWon: number }>
+    },
+    registrations: any[] // Registration objects with user.username and userId
+): Promise<void> {
+    console.log(`[Stats-Engine] Processing results for tournament ${tournamentId}...`);
+
+    // 1. Identify the Winner (Proficiency)
+    const winnerReg = registrations.find(r =>
+        r.user.username?.toLowerCase() === result.winner?.toLowerCase()
+    );
+
+    if (winnerReg) {
+        console.log(`[Stats-Engine] Recording win for ${winnerReg.user.username}`);
+        await recordTournamentWin(winnerReg.userId);
+    }
+
+    // 2. Process Performance & Activity for all participants
+    // We iterate through registrations to ensure we only update users who were actually in our DB
+    for (const reg of registrations) {
+        const username = reg.user.username?.toLowerCase();
+        if (!username) continue;
+
+        const pStats = result.playerStats?.get(username);
+        const standing = result.finalStandings?.find(s => s.player.toLowerCase() === username);
+
+        if (pStats || standing) {
+            // MATCH WINS (Proficiency)
+            const wins = pStats?.handsWon || 0;
+            const played = pStats?.handsPlayed || 0;
+            const losses = played - wins;
+
+            if (played > 0) {
+                await prisma.userStats.upsert({
+                    where: { userId: reg.userId },
+                    create: { userId: reg.userId, matchWins: wins, matchLosses: losses },
+                    update: {
+                        matchWins: { increment: wins },
+                        matchLosses: { increment: losses }
+                    }
+                });
+
+                // ACTIVITY (15%) - Estimate hours (approx 1 min per hand if not provided)
+                const hoursPlayed = played / 60;
+                await prisma.userStats.update({
+                    where: { userId: reg.userId },
+                    data: { totalHoursPlayed: { increment: hoursPlayed } }
+                });
+            }
+
+            // PROFICIENCY - Update Game-Specific Leaderboard
+            const tournament = await prisma.tournament.findUnique({
+                where: { id: tournamentId },
+                select: { gameId: true }
+            });
+
+            if (tournament?.gameId) {
+                await updateGameLeaderboard(reg.userId, tournament.gameId, {
+                    matchWins: wins,
+                    tournamentsWon: (winnerReg?.userId === reg.userId) ? 1 : 0,
+                    timePlayedHours: pStats ? Math.round(pStats.handsPlayed / 60) : 0
+                });
+            }
+
+            // Final Rank Update
+            await updateUserRank(reg.userId).catch(e => console.error(`Failed to update rank for ${reg.userId}:`, e));
+        }
+    }
+
+    // 3. Mark the Host for Effort Reprocessing
+    const tournament = await prisma.tournament.findUnique({
+        where: { id: tournamentId },
+        select: { hostId: true }
+    });
+
+    if (tournament?.hostId) {
+        // Incrementing Hosted count already happens at creation, but let's ensure rank is fresh
+        await updateUserRank(tournament.hostId);
     }
 }

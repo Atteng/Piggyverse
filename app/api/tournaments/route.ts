@@ -71,6 +71,7 @@ export async function GET(request: NextRequest) {
                             totalPool: true,
                             status: true,
                             marketQuestion: true, // Also nice to have
+                            isAutonomous: true,
                             outcomes: {
                                 select: {
                                     id: true,
@@ -89,10 +90,51 @@ export async function GET(request: NextRequest) {
         ]);
 
         // -----------------------------------------------------------------------
+        // --- AUTO-ACTIVATE TOURNAMENTS (Listing Lag Fix) ---
+        const now = new Date();
+        const updatedTournaments = await Promise.all(tournaments.map(async (t) => {
+            const startBoundary = t.registrationDeadline
+                ? new Date(t.registrationDeadline)
+                : new Date(t.startDate);
+
+            if (t.status === 'PENDING' && now >= startBoundary) {
+                console.log(`[Lazy-Activate] Marking tournament ${t.id} as ACTIVE in list view.`);
+                // Update DB Status
+                try {
+                    const updated = await prisma.tournament.update({
+                        where: { id: t.id },
+                        data: { status: 'ACTIVE' },
+                        include: {
+                            game: { select: { id: true, title: true, thumbnailUrl: true } },
+                            host: { select: { id: true, username: true, avatarUrl: true } },
+                            bettingMarkets: {
+                                select: {
+                                    id: true, marketType: true, totalPool: true, status: true, marketQuestion: true, isAutonomous: true,
+                                    outcomes: { select: { id: true, label: true, weight: true } }
+                                }
+                            }
+                        }
+                    });
+
+                    // Trigger worker if autonomous
+                    if (updated.bettingMarkets.some(m => m.isAutonomous)) {
+                        const { autonomousOddsWorker } = await import('@/lib/betting/autonomous-odds-worker');
+                        autonomousOddsWorker.start();
+                    }
+
+                    return updated;
+                } catch (e) {
+                    console.error(`[Lazy-Activate] Failed to update tournament ${t.id}`, e);
+                    return t;
+                }
+            }
+            return t;
+        }));
+
         // --- ODDS CALCULATION: Compute live odds for betting markets ---
         const { calculateOdds } = await import('@/lib/betting');
 
-        const tournamentsWithLivePool = tournaments.map(t => {
+        const tournamentsWithLivePool = updatedTournaments.map(t => {
             const prizePoolAmount = (t.prizePoolSeed || 0) + (t.registeredPlayers * (t.entryFeeAmount || 0));
 
             // Enhance betting markets with calculated odds

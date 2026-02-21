@@ -55,12 +55,12 @@ export async function GET(request: NextRequest) {
             return NextResponse.json(entries);
         }
 
-        // Game-specific leaderboard (keep existing logic)
-        const entries = await prisma.leaderboardEntry.findMany({
+        // Game-specific leaderboard (calculated on-the-fly to avoid stale 999999 ranks)
+        const dbEntries = await prisma.leaderboardEntry.findMany({
             where: { gameId },
             take: limit,
             orderBy: {
-                rank: "asc",
+                totalScore: "desc",
             },
             include: {
                 user: {
@@ -81,6 +81,12 @@ export async function GET(request: NextRequest) {
                 },
             },
         });
+
+        // Map to include real-time rank based on result set position
+        const entries = dbEntries.map((entry, index) => ({
+            ...entry,
+            rank: index + 1 // Real rank based on current sorted position
+        }));
 
         return NextResponse.json(entries);
     } catch (error) {

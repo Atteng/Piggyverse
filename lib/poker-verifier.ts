@@ -3,7 +3,7 @@
  * Automatically fetches and verifies tournament results for betting settlement
  */
 
-import { parsePokerHand, parsePokerLog, type PokerLogEntry } from './parsers/poker';
+import { parsePokerHand, parsePokerLog, parsePokerCSVLog, type PokerLogEntry } from './parsers/poker';
 
 interface PokerNowConfig {
     apiBaseUrl: string;
@@ -65,12 +65,15 @@ export class PokerNowVerifier {
                 if (response.ok) {
                     lastValid = mid;
                     low = mid + 1;
+                } else if (response.status === 404 && mid === 1) {
+                    // If even hand #1 returns 404, this might be an MTT or an invalid ID.
+                    // We return 0 to signal no hands could be found via Game API.
+                    return 0;
                 } else {
                     high = mid - 1;
                 }
             } catch (error) {
-                high = mid - 1; // Assume network error means hand doesn't exist to be safe
-                // In production, we should retry or handle specific errors differently
+                high = mid - 1;
             }
         }
 
@@ -166,6 +169,11 @@ export class PokerNowVerifier {
             const allHands = await this.fetchAllHands(tableId);
 
             if (allHands.length === 0) {
+                // FALLBACK: If standard hand fetch fails, check if this is an MTT
+                console.log(`[Verifier] No Game hands found for ${tableId}. Checking MTT audit log...`);
+                const mttResult = await this.verifyTournamentMTT(tableId);
+                if (mttResult.verified) return mttResult;
+
                 return {
                     tableId,
                     totalHands: 0,
@@ -173,25 +181,83 @@ export class PokerNowVerifier {
                     finalStandings: [],
                     playerStats: new Map(),
                     verified: false,
-                    verificationError: 'No hands found for this table',
+                    verificationError: 'No hands or MTT audit logs found for this table.',
                 };
             }
 
             // Parse all hands
             const summary = parsePokerLog(allHands);
 
-            // Get final standings from the last hand
-            const lastHand = parsePokerHand(allHands[allHands.length - 1]);
-            const finalStandings = lastHand
-                ? Array.from(lastHand.players.entries())
-                    .map(([player, stack]) => ({ player, stack }))
-                    .sort((a, b) => b.stack - a.stack)
-                    .map((p, i) => ({
-                        player: p.player,
-                        position: i + 1,
-                        finalStack: p.stack,
-                    }))
-                : [];
+            // --- ELIMINATION TRACKER LOGIC ---
+            // Track the exact hand number a player went bust
+            const eliminationHands = new Map<string, number>();
+            const activePlayers = new Set<string>();
+
+            // Chronologically scan hands to track bust-outs
+            const sortedHands = [...summary.hands].sort((a, b) => a.handNumber - b.handNumber);
+
+            for (const hand of sortedHands) {
+                for (const [player, stack] of hand.players.entries()) {
+                    activePlayers.add(player); // Discover player
+                    if (stack === 0) {
+                        // Player busted in a previous hand and didn't rebuy
+                        if (!eliminationHands.has(player)) {
+                            eliminationHands.set(player, hand.handNumber);
+                        }
+                    } else {
+                        // Player still has chips, or they rebought
+                        if (eliminationHands.has(player)) {
+                            eliminationHands.delete(player); // Cancel the bust-out
+                        }
+                    }
+                }
+            }
+
+            // Find players who survived to the very end (last hand)
+            const lastHand = sortedHands[sortedHands.length - 1];
+            const survivors = Array.from(lastHand?.players.entries() || [])
+                .filter(([_, stack]) => stack > 0)
+                .sort((a, b) => b[1] - a[1]); // Sort survivors by final stack descending
+
+            // Find eliminated players
+            const eliminated = Array.from(eliminationHands.entries())
+                .sort((a, b) => b[1] - a[1]); // Sort by hand number eliminated (highest hand = survived longer)
+
+            // Construct exact final standings
+            const finalStandings: Array<{ player: string, position: number, finalStack: number }> = [];
+            let currentPosition = 1;
+
+            // 1st: Add survivors
+            for (const [player, lastStack] of survivors) {
+                finalStandings.push({
+                    player,
+                    position: currentPosition++,
+                    finalStack: lastStack
+                });
+            }
+
+            // 2nd: Add eliminated players
+            for (const [player, handBustedOut] of eliminated) {
+                // If by some edge case they are in the survivor list, skip
+                if (!finalStandings.find(s => s.player === player)) {
+                    finalStandings.push({
+                        player,
+                        position: currentPosition++,
+                        finalStack: 0 // Busted
+                    });
+                }
+            }
+
+            // Fallback for anyone missed (e.g. didn't appear in later logs)
+            for (const player of Array.from(activePlayers)) {
+                if (!finalStandings.find(s => s.player === player)) {
+                    finalStandings.push({
+                        player,
+                        position: currentPosition++,
+                        finalStack: 0
+                    });
+                }
+            }
 
             const winner = finalStandings[0]?.player || '';
 
@@ -213,6 +279,156 @@ export class PokerNowVerifier {
                 playerStats: new Map(),
                 verified: false,
                 verificationError: error instanceof Error ? error.message : 'Unknown error',
+            };
+        }
+    }
+
+    /**
+     * Verify a completed tournament instantly.
+     * Automatically detect if the ID is a single table (Game) or an MTT and use the appropriate engine.
+     */
+    async verifyTournamentFullCSV(tableId: string): Promise<TournamentResult> {
+        console.log(`[Full Sync] Probing PokerNow for table/MTT ${tableId}...`);
+
+        // Try MTT Audit Log first if the ID looks like a string or if it's explicitly an MTT
+        // Most MTT IDs in the logs provided show alphanumeric strings similar to games.
+        const mttResult = await this.verifyTournamentMTT(tableId);
+        if (mttResult.verified) {
+            return mttResult;
+        }
+
+        // Fallback to traditional Game Log fetching
+        console.log(`[Full Sync] MTT check failed or returned no data. Falling back to deep hand fetch...`);
+        return this.verifyTournament(tableId);
+    }
+
+    /**
+     * Verify an MTT (Multi-Table Tournament) using the audit log API.
+     */
+    async verifyTournamentMTT(mttId: string): Promise<TournamentResult> {
+        try {
+            console.log(`[MTT Sync] Fetching audit log for MTT ${mttId}...`);
+            let allEntries: any[] = [];
+
+            // PokerNow API for MTT audit logs is at 'https://www.pokernow.com/api/mtt/[ID]/audit-log'
+            const apiBase = this.config.apiBaseUrl.includes('/api') ? this.config.apiBaseUrl : `${this.config.apiBaseUrl}/api`;
+            const mttUrl = `${apiBase}/mtt/${mttId}/audit-log`;
+
+            // Fetch the first page to get total pages
+            const firstPageResponse = await fetch(mttUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'accept': 'application/json, text/plain, */*'
+                },
+                body: JSON.stringify({ page: 1 })
+            });
+
+            if (!firstPageResponse.ok) {
+                if (firstPageResponse.status === 404) {
+                    throw new Error('MTT not found (404)');
+                }
+                throw new Error(`Audit log fetch failed: ${firstPageResponse.statusText}`);
+            }
+
+            const firstPageData = await firstPageResponse.json();
+            if (!firstPageData.data || !Array.isArray(firstPageData.data)) {
+                throw new Error('Invalid audit log data format received.');
+            }
+
+            allEntries = [...firstPageData.data];
+            const totalPages = firstPageData.pagesQuantity || 1;
+
+            // Fetch remaining pages
+            for (let p = 2; p <= totalPages; p++) {
+                const res = await fetch(mttUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ page: p })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.data) allEntries = [...allEntries, ...data.data];
+                }
+            }
+
+            // Derived Rankings logic
+            const eliminatedPlayers: string[] = []; // Chronological (first out = index 0)
+            let winner = '';
+
+            // Audit log entries are typically chronological (oldest first in the array)
+            for (const entry of allEntries) {
+                const content = entry.content || '';
+
+                // Match eliminations: "The player \"Name\" left the tournament with the stack 0 chips."
+                const eliminationMatch = content.match(/The player "(.+?)" left the tournament with the stack 0 chips/i);
+                if (eliminationMatch) {
+                    const name = eliminationMatch[1];
+                    // If a player rebuys, they might "leave with 0" multiple times conceptually in some logs, 
+                    // but usually in MTTs once you're out of chips and don't rebuy immediately you're out.
+                    // We remove them if they re-appear later as winners or survivors? 
+                    // Actually, the log order is absolute. The LAST time they appear as "left with 0" is their final rank.
+                    // So we filter duplicates and keep the LATEST one.
+                    const existingIndex = eliminatedPlayers.indexOf(name);
+                    if (existingIndex !== -1) {
+                        eliminatedPlayers.splice(existingIndex, 1);
+                    }
+                    eliminatedPlayers.push(name);
+                }
+
+                // Match winner: "The player \"Name\" won the tournament with X chips."
+                const winnerMatch = content.match(/The player "(.+?)" won the tournament with (\d+) chips/i);
+                if (winnerMatch) {
+                    winner = winnerMatch[1];
+                }
+            }
+
+            if (!winner && eliminatedPlayers.length === 0) {
+                return {
+                    tableId: mttId,
+                    totalHands: 0,
+                    winner: '',
+                    finalStandings: [],
+                    playerStats: new Map(),
+                    verified: false,
+                    verificationError: 'Audit log contains no elimination or victory records.'
+                };
+            }
+
+            const finalStandings: Array<{ player: string, position: number, finalStack: number }> = [];
+
+            // 1st place
+            if (winner) {
+                finalStandings.push({ player: winner, position: 1, finalStack: 0 });
+            }
+
+            // Places 2+ (Reversed chronological eliminations)
+            const reversedEliminations = [...eliminatedPlayers].reverse();
+            let currentPos = winner ? 2 : 1;
+            for (const p of reversedEliminations) {
+                if (p === winner) continue;
+                finalStandings.push({ player: p, position: currentPos++, finalStack: 0 });
+            }
+
+            return {
+                tableId: mttId,
+                totalHands: 0,
+                winner,
+                finalStandings,
+                playerStats: new Map(),
+                verified: true
+            };
+
+        } catch (error) {
+            console.error('[MTT Sync Error]:', error);
+            return {
+                tableId: mttId,
+                totalHands: 0,
+                winner: '',
+                finalStandings: [],
+                playerStats: new Map(),
+                verified: false,
+                verificationError: error instanceof Error ? error.message : 'Unknown MTT error'
             };
         }
     }

@@ -234,3 +234,96 @@ export function parsePokerLog(hands: PokerLogEntry[][]): GameSummary {
         playerStats,
     };
 }
+
+/**
+ * Parse a full CSV log from PokerNow's /log.csv endpoint
+ */
+export function parsePokerCSVLog(csvText: string): GameSummary {
+    if (!csvText) return { totalHands: 0, hands: [], playerStats: new Map() };
+
+    // The CSV has headers: "entry_at","msg","net_amount"
+    // We only care about the chronological sequence of messages.
+    // Usually PokerNow CSVs have newest first or oldest first depending on download format,
+    // but the standard download is oldest first or newest first. We need to normalize.
+    // The safest way is to split by newline, extract the message, and then let our existing logic handle it.
+
+    // Split by newlines (handling both \r\n and \n)
+    const lines = csvText.trim().split(/\r?\n/);
+
+    // Remove the header row if it exists
+    if (lines[0].toLowerCase().includes('entry_at')) {
+        lines.shift();
+    }
+
+    const logEntries: PokerLogEntry[] = [];
+
+    // CSV parser regex to handle quoted messages correctly
+    // Match: "date","message",net_amount OR date,"message",net_amount
+    const csvRegex = /^(?:")?(.*?)(?:")?,(?:")?(.*?)(?:")?,(?:")?(.*?)(?:")?$/;
+
+    // We need to group lines by hand. A new hand starts with "-- starting hand"
+    // Since we don't know the sort order of the file, we will extract all entries,
+    // and then chunk them by hand.
+    for (let i = 0; i < lines.length; i++) {
+        let line = lines[i];
+
+        // Handle multi-line CSV rows (if any) or simple splitting
+        // For simplicity and speed, we can just look for the message content
+        // since our Regex parser in `parsePokerHand` only reads the 'msg' string.
+
+        // A simple way to extract the message is to find the middle block.
+        // Or we can just run the regex engine directly against the raw line
+        // if we strip out the date prefix and comma.
+
+        // PokerNow CSV format: "2024-02-12T15:30:00.000Z", "The dealer is ...", "0"
+        let msgStr = line;
+
+        // Extract the actual message from the CSV row safely
+        const parts = line.split(/,"|"?,/);
+        if (parts.length >= 2) {
+            // Usually the message is in the second or last column
+            msgStr = parts.find(p => p.includes('dealer:') || p.includes('folds') || p.includes('calls') || p.includes('posts') || p.includes('collected') || p.includes('Player stacks:')) || line;
+
+            // Clean quotes
+            msgStr = msgStr.replace(/^"/, '').replace(/"$/, '').trim();
+        }
+
+        logEntries.push({
+            createdAt: Date.now() - i, // Fake timestamp for ordering if needed
+            msg: msgStr
+        });
+    }
+
+    // Now we chunk the flat log array into individual hands
+    // A hand starts with "-- starting hand" and ends when the next one begins.
+    const hands: PokerLogEntry[][] = [];
+    let currentHand: PokerLogEntry[] = [];
+
+    // PokerNow logs read bottom-to-top (newest on top) or top-to-bottom.
+    // Let's ensure chronological order: Start to finish
+    // Check if the first entry is hand #1 or the last hand.
+    const isReverseOrdered = logEntries[0]?.msg.includes('quits') || logEntries[0]?.msg.includes('collected'); // heuristic
+
+    const orderedEntries = isReverseOrdered ? logEntries.reverse() : logEntries;
+
+    for (const entry of orderedEntries) {
+        if (entry.msg.includes('-- starting hand #')) {
+            if (currentHand.length > 0) {
+                // We need to reverse the individual hand array because `parsePokerHand` 
+                // expects the API format where the hand's entries are newest-first (API style)
+                // before it reverses them back.
+                hands.push(currentHand.reverse());
+            }
+            currentHand = [entry];
+        } else if (currentHand.length > 0) {
+            currentHand.push(entry);
+        }
+    }
+
+    // Push the final hand
+    if (currentHand.length > 0) {
+        hands.push(currentHand.reverse());
+    }
+
+    return parsePokerLog(hands);
+}

@@ -4,14 +4,27 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { recordTournamentWin } from '@/lib/stats';
 
+// Simple in-memory cache for tournament details
+const tournamentCache = new Map<string, { data: any, timestamp: number }>();
+const CACHE_TTL = 5000; // 5 seconds
+
 // GET /api/tournaments/[id] - Get tournament details
 export async function GET(
     request: NextRequest,
     props: { params: Promise<{ id: string }> }
 ) {
     const params = await props.params;
+    const tournamentId = params.id;
+    const session = await getServerSession(authOptions);
+    const cacheKey = `${tournamentId}:${session?.user?.id || 'guest'}`;
+
+    // Check cache
+    const cached = tournamentCache.get(cacheKey);
+    if (cached && (Date.now() - cached.timestamp) < CACHE_TTL) {
+        return NextResponse.json(cached.data);
+    }
+
     try {
-        const session = await getServerSession(authOptions);
 
         // Check if user is host before querying to customize inviteCodes inclusion
         const baseTournament = await prisma.tournament.findUnique({
@@ -128,7 +141,8 @@ export async function GET(
             ...market,
             outcomes: market.outcomes.map(outcome => ({
                 ...outcome,
-                currentOdds: calculateCurrentOdds(market, outcome)
+                // Use persisted odd from worker if available, otherwise calculate live
+                currentOdds: (outcome as any).currentOdds || calculateCurrentOdds(market, outcome)
             }))
         }));
 
@@ -137,6 +151,32 @@ export async function GET(
             bettingMarkets: marketsWithOdds
         };
         // -----------------------------------------------------------------------
+
+        // --- AUTO-ACTIVATE TOURNAMENT & WORKER ---
+        const now = new Date();
+        const startBoundary = tournamentWithOdds.registrationDeadline
+            ? new Date(tournamentWithOdds.registrationDeadline)
+            : new Date(tournamentWithOdds.startDate);
+
+        if (tournamentWithOdds.status === 'PENDING' && now >= startBoundary) {
+            // Update DB Status
+            await prisma.tournament.update({
+                where: { id: tournamentWithOdds.id },
+                data: { status: 'ACTIVE' }
+            });
+            tournamentWithOdds.status = 'ACTIVE';
+
+            // Check if there are autonomous markets to start the worker
+            const hasAutonomous = tournamentWithOdds.bettingMarkets.some(m => m.isAutonomous);
+            if (hasAutonomous) {
+                const { autonomousOddsWorker } = await import('@/lib/betting/autonomous-odds-worker');
+                autonomousOddsWorker.start();
+                console.log(`[Auto-Activate] Started autonomous worker for tournament ${tournamentWithOdds.id}`);
+            }
+        }
+
+        // Cache the result
+        tournamentCache.set(cacheKey, { data: tournamentWithOdds, timestamp: Date.now() });
 
         return NextResponse.json(tournamentWithOdds);
     } catch (error) {
@@ -208,13 +248,25 @@ export async function PATCH(
             }
         });
 
-        // If winner is declared, update stats
+        // --- STATS SYNC: Update Effort and Proficiency ---
+        const { incrementPrizePoolSeeded, recordTournamentWin, updateUserRank } = await import('@/lib/stats');
+
+        // 1. If prize pool was updated, increment host's effort
+        if (updateData.prizePoolAmount !== undefined && updateData.prizePoolAmount > 0) {
+            await incrementPrizePoolSeeded(session.user.id, updateData.prizePoolAmount).catch(err =>
+                console.error('Failed to update host effort stats:', err)
+            );
+        }
+
+        // 2. If winner is declared, update winner's proficiency
         if (updateData.winnerId && updateData.winnerId !== tournament.winnerId) {
-            // Run asynchronously to not block response
-            recordTournamentWin(updateData.winnerId).catch(err =>
+            await recordTournamentWin(updateData.winnerId).catch(err =>
                 console.error('Failed to update winner stats:', err)
             );
         }
+
+        // 3. Always refresh host rank if any changes were made
+        await updateUserRank(session.user.id).catch(() => { });
 
         return NextResponse.json(updated);
     } catch (error) {
