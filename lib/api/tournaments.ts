@@ -254,3 +254,16 @@ export async function syncTournamentResults(id: string) {
 
     return res.json();
 }
+
+export async function syncTournamentResultsFullCSV(id: string) {
+    const res = await fetch(`/api/tournaments/${id}/verify-full`, {
+        method: "POST"
+    });
+
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to fully sync results from CSV");
+    }
+
+    return res.json();
+}

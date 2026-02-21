@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
-import { Trophy, Users, Clock, Calendar, Coins, ArrowLeft, Share2, Info, TrendingUp, Loader2, Shield, CheckCircle2, Plus, Wifi, XCircle, Gavel, FileSignature, Sparkles, Check } from "lucide-react";
+import { Trophy, Users, Clock, Calendar, Coins, ArrowLeft, Share2, Info, TrendingUp, Loader2, Shield, CheckCircle2, Plus, Wifi, XCircle, Gavel, FileSignature, Sparkles, Check, RefreshCw, Download } from "lucide-react";
 import { useBettingCart } from "@/context/betting-cart-context";
 import {
     DropdownMenu,
@@ -19,7 +19,17 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useCallback } from "react";
-import { getTournamentDetails, registerForTournament, unregisterFromTournament, deleteTournament, createTournament, resolveMarket, syncTournamentResults } from "@/lib/api/tournaments";
+import {
+    getTournamentDetails,
+    registerForTournament,
+    unregisterFromTournament,
+    deleteTournament,
+    createTournament,
+    resolveMarket,
+    syncTournamentResults,
+    updateTournament,
+    syncTournamentResultsFullCSV,
+} from "@/lib/api/tournaments";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -81,7 +91,8 @@ export function TournamentDetailsView({ tournamentId }: TournamentDetailsViewPro
     // Fetch Tournament Details
     const { data: tournament, isLoading, error } = useQuery({
         queryKey: ['tournament', tournamentId],
-        queryFn: () => getTournamentDetails(tournamentId)
+        queryFn: () => getTournamentDetails(tournamentId),
+        refetchInterval: 15000, // Refresh every 15 seconds to reduce server load
     });
 
     // Resolution Modal State
@@ -108,6 +119,9 @@ export function TournamentDetailsView({ tournamentId }: TournamentDetailsViewPro
     // Countdown Logic
     const [timeLeft, setTimeLeft] = useState<string>("");
     const [isRegistrationExpired, setIsRegistrationExpired] = useState(false);
+
+    // Download State
+    const [isDownloading, setIsDownloading] = useState(false);
 
     const calculateTimeLeft = useCallback(() => {
         if (!tournament) {
@@ -146,6 +160,13 @@ export function TournamentDetailsView({ tournamentId }: TournamentDetailsViewPro
         const timer = setInterval(calculateTimeLeft, 1000);
         return () => clearInterval(timer);
     }, [calculateTimeLeft]);
+
+    // Auto-refresh tournament data when countdown hits zero to trigger Auto-Activate
+    useEffect(() => {
+        if (isRegistrationExpired && tournament?.status === 'PENDING') {
+            queryClient.invalidateQueries({ queryKey: ['tournament', tournamentId] });
+        }
+    }, [isRegistrationExpired, tournament?.status, tournamentId, queryClient]);
 
     // ... (rest of hook calls) ... (Wait, I need to match original content)
 
@@ -218,7 +239,31 @@ export function TournamentDetailsView({ tournamentId }: TournamentDetailsViewPro
         }
     });
 
-    // Mutation: Sync Results
+    // Mutation: Cancel Tournament (Emergency Override)
+    const cancelTournamentMutation = useMutation({
+        mutationFn: async () => {
+            const res = await fetch(`/api/tournaments/${tournamentId}/cancel`, {
+                method: 'POST'
+            });
+            if (!res.ok) throw new Error(await res.text());
+            return res.json();
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["tournament", tournamentId] });
+            toast({ title: "Success", description: "Tournament cancelled successfully" });
+        },
+        onError: (err: any) => {
+            toast({ title: "Cancellation Failed", description: err.message, variant: "destructive" });
+        }
+    });
+
+    const handleCancelTournament = () => {
+        if (window.confirm("ARE YOU SURE? This will permanently cancel this tournament and its betting markets!")) {
+            cancelTournamentMutation.mutate();
+        }
+    };
+
+    // Mutation: Sync Results (Incremental JSON)
     const syncMutation = useMutation({
         mutationFn: () => syncTournamentResults(tournamentId),
         onSuccess: () => {
@@ -231,6 +276,25 @@ export function TournamentDetailsView({ tournamentId }: TournamentDetailsViewPro
         onError: (error: Error) => {
             toast({
                 title: "Sync Failed",
+                description: error.message,
+                variant: "destructive"
+            });
+        }
+    });
+
+    // Mutation: Sync Results (Full CSV Override)
+    const syncFullCSVMutation = useMutation({
+        mutationFn: () => syncTournamentResultsFullCSV(tournamentId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['tournament', tournamentId] });
+            toast({
+                title: "Full CSV Sync Complete",
+                description: "Final standings, bust-outs, and payouts verified via log override.",
+            });
+        },
+        onError: (error: Error) => {
+            toast({
+                title: "CSV Sync Failed",
                 description: error.message,
                 variant: "destructive"
             });
@@ -347,6 +411,38 @@ export function TournamentDetailsView({ tournamentId }: TournamentDetailsViewPro
         } else {
             // Free tournament
             registerMutation.mutate();
+        }
+    };
+
+    const handleDownloadSettlements = async () => {
+        setIsDownloading(true);
+        try {
+            const response = await fetch(`/api/tournaments/${tournamentId}/settlements`);
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || "Failed to generate settlements");
+            }
+
+            const data = await response.json();
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `tournament-${tournamentId}-settlements.json`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+
+            toast({ title: "Success", description: "Settlement report downloaded successfully!" });
+        } catch (error) {
+            toast({
+                title: "Download Failed",
+                description: error instanceof Error ? error.message : "An error occurred",
+                variant: "destructive"
+            });
+        } finally {
+            setIsDownloading(false);
         }
     };
 
@@ -630,32 +726,42 @@ export function TournamentDetailsView({ tournamentId }: TournamentDetailsViewPro
 
                             <div className="flex flex-col gap-2">
                                 <div className="flex gap-3">
-                                    {isRegistered ? (
+                                    {isHost && tournament.status === 'COMPLETED' ? (
+                                        <Button
+                                            onClick={handleDownloadSettlements}
+                                            disabled={isDownloading}
+                                            className="flex-1 bg-[var(--color-piggy-deep-pink)] hover:bg-[var(--color-piggy-deep-pink)]/80 text-white font-black uppercase tracking-tighter h-12 rounded-xl shadow-[0_0_20px_rgba(255,47,122,0.4)]"
+                                        >
+                                            {isDownloading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
+                                            {isDownloading ? "Generating..." : "Download Settlements"}
+                                        </Button>
+                                    ) : isRegistered ? (
                                         <Button
                                             onClick={() => unregisterMutation.mutate()}
-                                            disabled={unregisterMutation.isPending}
+                                            disabled={unregisterMutation.isPending || tournament.status === 'ACTIVE' || tournament.status === 'COMPLETED'}
                                             variant="destructive"
-                                            className="flex-1 font-black uppercase tracking-tighter h-12 rounded-xl"
+                                            className="flex-1 font-black uppercase tracking-tighter h-12 rounded-xl disabled:opacity-50"
                                         >
                                             {unregisterMutation.isPending ? "Leaving..." : "Unregister"}
                                         </Button>
                                     ) : isPendingPayment ? (
                                         <Button
                                             onClick={() => setIsPaymentModalOpen(true)}
-                                            disabled={isRegistrationExpired}
+                                            disabled={isRegistrationExpired || tournament.status === 'COMPLETED'}
                                             className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-black font-black uppercase tracking-tighter h-12 rounded-xl shadow-[0_0_20px_rgba(234,179,8,0.4)] disabled:opacity-50"
                                         >
-                                            {isRegistrationExpired ? "Registration Closed" : "Complete Payment"}
+                                            {isRegistrationExpired || tournament.status === 'COMPLETED' ? "Registration Closed" : "Complete Payment"}
                                         </Button>
                                     ) : (
                                         <Button
                                             onClick={handleRegisterClick}
-                                            disabled={registerMutation.isPending || (confirmedParticipants.length >= tournament.maxPlayers) || (isRegistrationExpired && tournament.status === 'PENDING')}
+                                            disabled={registerMutation.isPending || (confirmedParticipants.length >= tournament.maxPlayers) || (isRegistrationExpired && tournament.status === 'PENDING') || tournament.status === 'COMPLETED'}
                                             className="flex-1 bg-[var(--color-piggy-deep-pink)] hover:bg-[var(--color-piggy-deep-pink)]/80 text-white font-black uppercase tracking-tighter h-12 rounded-xl shadow-[0_0_20px_rgba(255,47,122,0.4)] disabled:opacity-50 disabled:grayscale"
                                         >
                                             {registerMutation.isPending ? "Registering..." :
-                                                (isRegistrationExpired && tournament.status === 'PENDING') ? "Registration Closed" :
-                                                    tournament.status === "ACTIVE" ? "Watch Stream" : "Register Now"}
+                                                tournament.status === 'COMPLETED' ? "Tournament Ended" :
+                                                    (isRegistrationExpired && tournament.status === 'PENDING') ? "Registration Closed" :
+                                                        tournament.status === "ACTIVE" ? "Watch Stream" : "Register Now"}
                                         </Button>
                                     )}
 
@@ -676,12 +782,35 @@ export function TournamentDetailsView({ tournamentId }: TournamentDetailsViewPro
                                 </div>
 
                                 {isHost && (
-                                    <Button
-                                        onClick={() => setIsSeedModalOpen(true)}
-                                        className="w-full bg-zinc-700 hover:bg-zinc-600 text-white font-black uppercase tracking-tighter h-10 rounded-xl border border-white/10 text-xs"
-                                    >
-                                        Seed Prize Pool
-                                    </Button>
+                                    <div className="flex gap-2 w-full">
+                                        <Button
+                                            onClick={() => setIsSeedModalOpen(true)}
+                                            className="flex-none px-4 bg-zinc-700 hover:bg-zinc-600 text-white font-black uppercase tracking-tighter h-10 rounded-xl border border-white/10 text-[10px] md:text-xs"
+                                        >
+                                            Seed Pool
+                                        </Button>
+                                        <Button
+                                            onClick={() => syncFullCSVMutation.mutate()}
+                                            disabled={syncFullCSVMutation.isPending || (tournament.status !== 'ACTIVE' && tournament.status !== 'COMPLETED')}
+                                            className="flex-1 bg-[var(--color-piggy-super-green)] hover:bg-[var(--color-piggy-super-green)]/80 text-black font-black uppercase tracking-tighter h-10 rounded-xl border border-[var(--color-piggy-super-green)]/50 text-[10px] md:text-xs shadow-[0_0_15px_rgba(189,255,0,0.4)] overflow-hidden text-ellipsis whitespace-nowrap"
+                                        >
+                                            {syncFullCSVMutation.isPending ? <RefreshCw className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2 animate-spin shrink-0" /> : <Download className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2 shrink-0" />}
+                                            Full Sync (Completed)
+                                        </Button>
+
+                                        {/* Cancel Tournament Button (Only for Hosts of PENDING/ACTIVE games) */}
+                                        {isHost && (tournament?.status === 'PENDING' || tournament?.status === 'ACTIVE') && (
+                                            <Button
+                                                onClick={handleCancelTournament}
+                                                disabled={cancelTournamentMutation.isPending}
+                                                variant="outline"
+                                                className="flex-none px-4 bg-red-900/20 border-red-500/30 hover:bg-red-900/40 text-red-500 font-black h-10 rounded-xl text-[10px] md:text-xs"
+                                            >
+                                                {cancelTournamentMutation.isPending ? <RefreshCw className="w-3 h-3 animate-spin mr-1" /> : <XCircle className="w-3 h-3 mr-1" />}
+                                                Cancel
+                                            </Button>
+                                        )}
+                                    </div>
                                 )}
                             </div>
                         </div>
@@ -812,26 +941,69 @@ export function TournamentDetailsView({ tournamentId }: TournamentDetailsViewPro
                                 <div className="bg-black/20 backdrop-blur-sm border border-white/10 rounded-2xl p-4 md:p-6">
                                     <h3 className="text-xs font-mono font-black uppercase tracking-widest text-[var(--color-piggy-deep-pink)] mb-3">Participants ({confirmedParticipants.length})</h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                        {confirmedParticipants.map((p: any) => {
-                                            const assignedCode = isHost ? tournament.inviteCodes?.find((c: any) => c.usedByUserId === p.user.id)?.code : null;
-                                            return (
-                                                <div key={p.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5 group hover:border-white/10 transition-colors">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-8 h-8 bg-black/40 rounded-full flex items-center justify-center font-bold text-xs text-[var(--color-piggy-deep-pink)] border border-white/5">
-                                                            {p.user.username?.[0] || "U"}
+                                        {[...confirmedParticipants]
+                                            .sort((a: any, b: any) => {
+                                                if (a.finalRank && b.finalRank) return a.finalRank - b.finalRank;
+                                                if (a.finalRank) return -1;
+                                                if (b.finalRank) return 1;
+                                                return (a.user.username || "").localeCompare(b.user.username || "");
+                                            })
+                                            .map((p: any) => {
+                                                const assignedCode = isHost ? tournament.inviteCodes?.find((c: any) => c.usedByUserId === p.user.id)?.code : null;
+
+                                                // Elimination Tracker Styling
+                                                const hasRank = typeof p.finalRank === 'number';
+                                                let rankColor = "text-gray-400 border-white/5 bg-black/40";
+                                                let cardStyle = "bg-white/5 border-white/5 hover:border-white/10";
+
+                                                if (hasRank) {
+                                                    if (p.finalRank === 1) {
+                                                        rankColor = "text-[#FFD700] border-[#FFD700]/30 bg-[#FFD700]/10";
+                                                        cardStyle = "bg-[#FFD700]/10 border-[#FFD700]/30 hover:bg-[#FFD700]/15 hover:scale-[1.02]";
+                                                    } else if (p.finalRank === 2) {
+                                                        rankColor = "text-[#C0C0C0] border-[#C0C0C0]/30 bg-[#C0C0C0]/10";
+                                                        cardStyle = "bg-[#C0C0C0]/10 border-[#C0C0C0]/30 hover:bg-[#C0C0C0]/15 hover:scale-[1.02]";
+                                                    } else if (p.finalRank === 3) {
+                                                        rankColor = "text-[#CD7F32] border-[#CD7F32]/30 bg-[#CD7F32]/10";
+                                                        cardStyle = "bg-[#CD7F32]/10 border-[#CD7F32]/30 hover:bg-[#CD7F32]/15 hover:scale-[1.02]";
+                                                    } else if (p.finalRank <= 10) {
+                                                        rankColor = "text-[var(--color-piggy-cyan)] border-[var(--color-piggy-cyan)]/20 bg-black/40";
+                                                        cardStyle = "bg-[var(--color-piggy-cyan)]/5 border-[var(--color-piggy-cyan)]/20 hover:border-[var(--color-piggy-cyan)]/40 hover:bg-[var(--color-piggy-cyan)]/10";
+                                                    } else {
+                                                        rankColor = "text-zinc-500 border-zinc-500/20 bg-black/40 opacity-70";
+                                                        cardStyle = "bg-white/5 border-white/5 opacity-70";
+                                                    }
+                                                }
+
+                                                return (
+                                                    <div key={p.id} className={cn(
+                                                        "flex items-center justify-between p-3 rounded-lg border transition-all duration-300",
+                                                        cardStyle
+                                                    )}>
+                                                        <div className="flex items-center gap-3">
+                                                            <div className={cn(
+                                                                "w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs border transition-colors",
+                                                                rankColor
+                                                            )}>
+                                                                {hasRank ? `#${p.finalRank}` : (p.user.username?.[0] || "U")}
+                                                            </div>
+                                                            <span className={cn(
+                                                                "font-bold text-sm",
+                                                                hasRank && p.finalRank === 1 ? "text-[#FFD700]" : hasRank && p.finalRank <= 10 ? "text-white" : "text-gray-400"
+                                                            )}>
+                                                                {p.user.username || "Anonymous"}
+                                                            </span>
                                                         </div>
-                                                        <span className="font-bold text-gray-400 text-sm">{p.user.username || "Anonymous"}</span>
+                                                        {isHost && assignedCode && (
+                                                            <div className="flex items-center gap-2">
+                                                                <code className="text-[10px] font-mono bg-black/40 text-[var(--color-piggy-super-green)] px-2 py-1 rounded border border-[var(--color-piggy-super-green)]/20">
+                                                                    {assignedCode}
+                                                                </code>
+                                                            </div>
+                                                        )}
                                                     </div>
-                                                    {isHost && assignedCode && (
-                                                        <div className="flex items-center gap-2">
-                                                            <code className="text-[10px] font-mono bg-black/40 text-[var(--color-piggy-super-green)] px-2 py-1 rounded border border-[var(--color-piggy-super-green)]/20">
-                                                                {assignedCode}
-                                                            </code>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            );
-                                        })}
+                                                );
+                                            })}
                                         {confirmedParticipants.length === 0 && <div className="text-gray-400 text-sm leading-snug">No participants yet.</div>}
                                     </div>
                                 </div>

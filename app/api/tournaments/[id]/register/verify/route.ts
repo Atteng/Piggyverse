@@ -170,6 +170,20 @@ export async function POST(
                 }
             });
 
+            // Create Transaction Receipt for future settlement attribution
+            await prisma.transactionReceipt.create({
+                data: {
+                    txHash: txHash,
+                    fromAddress: receipt.from.toLowerCase(),
+                    amount: actualAmount,
+                    token: token,
+                    type: 'ENTRY_FEE',
+                    referenceId: params.id,
+                    status: 'VERIFIED',
+                    verifiedAt: new Date()
+                }
+            }).catch(e => console.error("Failed to create TransactionReceipt record:", e));
+
             // Assign code if available
             if (availableCode) {
                 await prisma.tournamentInviteCode.update({
